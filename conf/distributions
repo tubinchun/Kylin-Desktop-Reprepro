@@ -1,0 +1,6 @@
+Origin: Kylin Desktop
+Label: Kylin Desktop
+Codename: focal
+Architectures: amd64 i386 arm64 loongarch64 source
+Components: main
+Description: Kylin Desktop 鍖呯鐞嗕粨搴?
