@@ -1,0 +1,3979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kylin Desktop 鍖呯鐞嗙郴缁燂紝鏀寔澶氫粨搴撶鐞嗐€佹壒閲忎笂浼犲拰鍒犻櫎杞欢鍖?>
+    <meta name="keywords" content="Kylin Desktop, 鍖呯鐞? apt浠撳簱, reprepro">
+    <title>Kylin Desktop 鍖呯鐞?/title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e40af;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --secondary-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --background-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --transition-fast: 150ms ease-in-out;
+            --transition-normal: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            width: 280px;
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal);
+            z-index: 999;
+            transform: translateX(-100%);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            display: none;
+            transition: opacity var(--transition-normal);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .sidebar-header {
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-nav {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .sidebar-nav-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            padding-left: var(--spacing-sm);
+        }
+
+        .sidebar-nav-items {
+            list-style: none;
+        }
+
+        .sidebar-nav-item {
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            outline: none;
+        }
+
+        .sidebar-nav-link:hover {
+            background-color: var(--border-light);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .sidebar-nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar-nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 24px;
+            background-color: white;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .sidebar-nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+        }
+
+        /* 椤堕儴瀵艰埅鏍?*/
+        .top-nav {
+            background-color: var(--surface-color);
+            box-shadow: var(--shadow-md);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 64px;
+        }
+
+        .top-nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 var(--spacing-xl);
+            height: 100%;
+        }
+
+        .top-nav-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+        }
+
+        .menu-toggle:hover {
+            background-color: var(--border-light);
+        }
+
+        .top-nav-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-nav-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-secondary {
+            background-color: var(--border-light);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+            transform: translateY(-1px);
+        }
+
+        .theme-icon {
+            font-size: 1.125rem;
+        }
+
+        /* 搴旂敤瀹瑰櫒 */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            margin-top: 64px;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: var(--spacing-xl);
+            min-height: calc(100vh - 64px);
+            transition: margin-left var(--transition-normal);
+        }
+
+        .task-sidebar {
+            width: 300px;
+            background-color: var(--surface-color);
+            border-left: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal);
+            max-height: 100vh;
+        }
+
+        .task-sidebar-header {
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .task-sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .task-item {
+            background-color: var(--border-light);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            transition: all var(--transition-fast);
+        }
+
+        .task-item:hover {
+            background-color: var(--border-color);
+        }
+
+        .task-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .task-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .task-item-status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-full);
+        }
+
+        .task-item-status.running {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .task-item-status.completed {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .task-item-status.failed {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+        }
+
+        .task-item-details {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .task-item-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-sm);
+        }
+
+        .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+        }
+
+        /* 闈㈠寘灞戝鑸?*/
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-muted);
+        }
+
+        /* 浠〃鐩樺崱鐗?*/
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .dashboard-card {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .dashboard-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .dashboard-card-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-color));
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .dashboard-card-content {
+            flex: 1;
+        }
+
+        .dashboard-card-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .dashboard-card-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* 浠撳簱鍒涘缓琛ㄥ崟 */
+        .repo-create-form {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .repo-create-form .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* 閮ㄥ垎鏍囬 */
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        /* 鐘舵€佸窘绔?*/
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        /* 鍝嶅簲寮忚皟鏁?*/
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+            .content-area {
+                padding: var(--spacing-lg);
+            }
+            .dashboard-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 999;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+                padding: var(--spacing-md);
+            }
+            .top-nav-container {
+                padding: 0 var(--spacing-md);
+            }
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+            .repo-create-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .repo-create-form .form-group {
+                min-width: auto;
+            }
+        }
+
+        /* 娣辫壊妯″紡 */
+        .dark-mode {
+            --background-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --border-light: #2a3343;
+        }
+
+        /* 杈呭姪绫?*/
+        .radius-full {
+            border-radius: 9999px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.2;
+        }
+
+        .page-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition-normal);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .upload-section {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            text-align: center;
+            background-color: rgba(30, 64, 175, 0.02);
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            margin-bottom: var(--spacing-xl);
+            user-select: none;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(30, 64, 175, 0.05);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--spacing-lg);
+            color: white;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .upload-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upload-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-xl);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+            user-select: none;
+            outline: none;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+        }
+
+        .upload-btn:active {
+            transform: translateY(0);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .repo-management {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .repo-controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-md);
+            align-items: end;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .form-select,
+        .form-input {
+            padding: var(--spacing-sm);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            transition: all var(--transition-fast);
+            background-color: var(--surface-color);
+            font-family: var(--font-family);
+            outline: none;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .repo-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .repo-item {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all var(--transition-normal);
+        }
+
+        .repo-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .repo-item.active {
+            border-color: var(--primary-color);
+            background-color: rgba(30, 64, 175, 0.05);
+        }
+
+        .repo-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .repo-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            user-select: none;
+            outline: none;
+            font-family: var(--font-family);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .packages-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .packages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .packages-header-left {
+            flex: 1;
+        }
+
+        .packages-header-right {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            position: relative;
+            width: 250px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            transition: all var(--transition-fast);
+            background-color: var(--surface-color);
+            font-family: var(--font-family);
+            outline: none;
+            padding-right: 2.5rem;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: var(--spacing-sm);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--border-light);
+            padding: var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+        }
+
+        tr:hover td {
+            background-color: rgba(30, 64, 175, 0.02);
+        }
+
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        .select-all-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .package-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .pagination-btn {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-weight: 500;
+            font-family: var(--font-family);
+            outline: none;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .status {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            display: none;
+            animation: slideIn var(--transition-normal);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .status.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .progress-container {
+            margin-bottom: var(--spacing-xl);
+            display: none;
+            animation: slideIn var(--transition-normal);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .progress-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-items {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .progress-item {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: all var(--transition-normal);
+        }
+
+        .progress-item:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .progress-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .progress-filename {
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .progress-percentage {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-left: var(--spacing-md);
+            flex-shrink: 0;
+        }
+
+        .progress-percentage.completed {
+            color: var(--success-color);
+        }
+
+        .progress-percentage.failed {
+            color: var(--error-color);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: var(--border-light);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--secondary-color));
+            border-radius: var(--radius-sm);
+            transition: width var(--transition-normal);
+            width: 0%;
+        }
+
+        .progress-bar.completed {
+            background: linear-gradient(90deg, var(--success-color), #059669);
+        }
+
+        .progress-bar.failed {
+            background: linear-gradient(90deg, var(--error-color), #dc2626);
+        }
+
+        .repo-info {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .repo-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .info-item {
+            padding: var(--spacing-md);
+            background-color: var(--border-light);
+            border-radius: var(--radius-md);
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .code-block {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .usage-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .usage-list li {
+            padding: var(--spacing-sm) 0;
+            padding-left: var(--spacing-xl);
+            position: relative;
+        }
+
+        .usage-list li::before {
+            content: '鉁?;
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes progress-pulse {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .animate-pulse {
+            animation: progress-pulse 2s ease-in-out infinite;
+            background-size: 200% 200%;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+            .content-area {
+                margin-left: 250px;
+                padding: var(--spacing-lg);
+            }
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+                padding: var(--spacing-md);
+            }
+            .page-title {
+                font-size: 1.75rem;
+            }
+            .repo-controls {
+                grid-template-columns: 1fr;
+            }
+            .repo-list {
+                grid-template-columns: 1fr;
+            }
+            .card {
+                padding: var(--spacing-lg);
+            }
+            .upload-section {
+                padding: var(--spacing-lg);
+            }
+            .packages-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .packages-header-right {
+                justify-content: stretch;
+            }
+            .search-container {
+                width: 100%;
+            }
+            .table-container {
+                font-size: 0.875rem;
+            }
+            th, td {
+                padding: var(--spacing-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-area {
+                padding: var(--spacing-sm);
+            }
+            .page-title {
+                font-size: 1.5rem;
+            }
+            .sidebar-logo-text {
+                font-size: 1rem;
+            }
+            .sidebar-nav-link {
+                padding: var(--spacing-xs) var(--spacing-sm);
+                font-size: 0.875rem;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+    <!-- 椤堕儴瀵艰埅鏍?-->
+    <header class="top-nav">
+        <div class="top-nav-container">
+            <div class="top-nav-left">
+                <button class="menu-toggle" id="menuToggle" aria-label="鍒囨崲鑿滃崟">
+                    <span class="menu-icon">鈽?/span>
+                </button>
+                <h1 class="top-nav-title">Kylin Desktop 鍖呯鐞?/h1>
+            </div>
+            <div class="top-nav-right">
+                <div class="user-menu">
+                    <button class="btn btn-secondary" id="themeToggle" aria-label="鍒囨崲涓婚">
+                        <span class="theme-icon">馃寵</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">馃摝</div>
+                    <div class="sidebar-logo-text">Kylin Desktop</div>
+                </div>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-nav-title">瀵艰埅</div>
+                <ul class="sidebar-nav-items">
+                    <li class="sidebar-nav-item">
+                        <a href="#dashboard" class="sidebar-nav-link active" id="defaultRepoLink" aria-current="page" onclick="switchToRepo('default'); return false;">
+                            <span class="sidebar-nav-icon">馃彔</span>
+                            <span>榛樿浠撳簱</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-nav-title">浠撳簱</div>
+                <ul class="sidebar-nav-items" id="sidebarRepoList" aria-label="浠撳簱鍒楄〃">
+                </ul>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-nav-title">闀滃儚鍚屾</div>
+                <ul class="sidebar-nav-items">
+                    <li class="sidebar-nav-item">
+                        <a href="#mirrors" class="sidebar-nav-link" id="mirrorSyncLink" onclick="switchToMirrors(); return false;">
+                            <span class="sidebar-nav-icon">馃攧</span>
+                            <span>浠撳簱闀滃儚鍚屾</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="container">
+                <!-- 椤甸潰鏍囬鍜岄潰鍖呭睉 -->
+                <div class="page-header">
+                    <div class="breadcrumb">
+                        <span>棣栭〉</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span id="currentRepoBreadcrumb">榛樿浠撳簱</span>
+                    </div>
+                    <h1 class="page-title">浠撳簱绠＄悊</h1>
+                    <p class="page-subtitle">绠＄悊鎮ㄧ殑杞欢鍖呬粨搴擄紝涓婁紶銆佸垹闄ゅ拰鏌ョ湅杞欢鍖?/p>
+                </div>
+
+                <!-- 浠撳簱姒傝鍗＄墖 -->
+                <div class="dashboard-cards">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">馃摝</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">褰撳墠浠撳簱</div>
+                            <div class="dashboard-card-value" id="currentRepoValue">default</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">馃搵</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">鍖呮暟閲?/div>
+                            <div class="dashboard-card-value" id="packageCountValue">0</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">馃彈锔?/div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">浠撳簱鎬绘暟</div>
+                            <div class="dashboard-card-value" id="repoCountValue">0</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">馃搱</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">鏈€杩戜笂浼?/div>
+                            <div class="dashboard-card-value" id="lastUploadValue">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 浠撳簱绠＄悊閮ㄥ垎 -->
+                <div class="card repo-management">
+                    <div class="card-header">
+                        <h2 class="card-title">浠撳簱绠＄悊</h2>
+                        <p class="card-description">鍒涘缓鍜岀鐞嗘偍鐨勮蒋浠跺寘浠撳簱</p>
+                    </div>
+                    <div class="repo-controls">
+                        <div class="form-group">
+                            <label class="form-label" for="repoSelect">閫夋嫨鐩爣浠撳簱</label>
+                            <select id="repoSelect" class="form-select" aria-label="閫夋嫨浠撳簱">
+                                <option value="default">default (榛樿浠撳簱)</option>
+                            </select>
+                        </div>
+                        <div class="repo-create-form">
+                            <div class="form-group">
+                                <input type="text" id="newRepoName" class="form-input" placeholder="杈撳叆鏂颁粨搴撳悕绉? aria-label="鏂颁粨搴撳悕绉?>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="newRepoCodename" class="form-input" placeholder="杈撳叆Codename (濡? focal)" aria-label="浠撳簱Codename">
+                            </div>
+                            <button class="btn btn-success" onclick="createRepository()" aria-label="鍒涘缓浠撳簱">鍒涘缓浠撳簱</button>
+                        </div>
+                    </div>
+                    <div class="repo-list" id="repoList">
+                        <h4 class="section-title">浠撳簱鍒楄〃</h4>
+                    </div>
+                </div>
+
+                <!-- 涓婁紶鍖哄煙 -->
+                <div class="upload-section" onclick="document.getElementById('fileInput').click()" aria-label="涓婁紶鏂囦欢鍖哄煙">
+                    <div class="upload-icon">馃搧</div>
+                    <h2 class="upload-title">涓婁紶 Kylin 鍖?/h2>
+                    <p class="upload-description">鐐瑰嚮鎴栨嫋鎷芥枃浠跺埌姝ゅ锛屾敮鎸佹壒閲忎笂浼犲涓?.deb 鏂囦欢</p>
+                    <input type="file" id="fileInput" accept=".deb" multiple aria-label="閫夋嫨deb鏂囦欢">
+                    <button class="upload-btn">閫夋嫨鏂囦欢</button>
+                </div>
+
+                <!-- 鐘舵€佸拰杩涘害 -->
+                <div class="status" id="status" role="status" aria-live="polite"></div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-header">
+                        <h3 class="progress-title">涓婁紶杩涘害</h3>
+                    </div>
+                    <div class="progress-items" id="progressItems"></div>
+                </div>
+
+                <!-- 鍖呯鐞嗛儴鍒?-->
+                <div class="card packages-section">
+                    <div class="packages-header">
+                        <div class="packages-header-left">
+                            <h2 class="card-title">浠撳簱涓殑鍖?/h2>
+                            <p class="card-description">鏌ョ湅鍜岀鐞嗕粨搴撲腑鐨勮蒋浠跺寘</p>
+                        </div>
+                        <div class="packages-header-right">
+                            <div class="search-container">
+                                <input type="text" id="searchInput" class="search-input" placeholder="鎼滅储鍖呭悕銆佺増鏈垨鏋舵瀯..." aria-label="鎼滅储杞欢鍖?>
+                                <span class="search-icon">馃攳</span>
+                            </div>
+                            <button class="btn btn-danger" id="batchDeleteBtn" disabled style="height: 38px;" aria-label="鎵归噺鍒犻櫎">
+                                鎵归噺鍒犻櫎
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="packagesTable" aria-label="杞欢鍖呭垪琛?>
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell">
+                                        <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox" aria-label="鍏ㄩ€?>
+                                    </th>
+                                    <th>鍖呭悕</th>
+                                    <th>鐗堟湰</th>
+                                    <th>鏋舵瀯</th>
+                                    <th>鎿嶄綔</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">鍔犺浇涓?..</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination">
+                        <button class="pagination-btn" id="prevPage" disabled aria-label="涓婁竴椤?>涓婁竴椤?/button>
+                        <span class="pagination-info" id="pageInfo">绗?1 椤碉紝鍏?1 椤?/span>
+                        <button class="pagination-btn" id="nextPage" disabled aria-label="涓嬩竴椤?>涓嬩竴椤?/button>
+                    </div>
+                </div>
+
+                <!-- 浠撳簱淇℃伅閮ㄥ垎 -->
+                <div class="card repo-info">
+                    <div class="card-header">
+                        <h2 class="card-title">浠撳簱淇℃伅</h2>
+                        <p class="card-description">鏌ョ湅浠撳簱璇︾粏淇℃伅鍜屼娇鐢ㄨ鏄?/p>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Codename</div>
+                            <div class="info-value" id="repoCodenameValue">focal</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Components</div>
+                            <div class="info-value">main</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Architectures</div>
+                            <div class="info-value">amd64, arm64, i386, loongarch64, source</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">鐘舵€?/div>
+                            <div class="info-value status-badge" id="repoStatusValue">娲昏穬</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title">浠撳簱璁块棶鍦板潃</h3>
+                    <div class="code-block" id="repoUrlInfo">
+HTTP璁块棶: http://loading.../repo
+鏂囦欢鐩綍: /app/repos/default (瀹瑰櫒鍐?
+鏁版嵁鎸佷箙鍖? ./repos/default (瀹夸富鏈?
+                    </div>
+
+                    <h3 class="section-title">瀹㈡埛绔娇鐢ㄦ柟娉?/h3>
+                    <div class="code-block" id="clientUsageInfo">
+# 娣诲姞浠撳簱婧愶紙鏃犻渶瀵煎叆鍏挜锛?echo "deb [trusted=yes] http://loading.../repo focal main" | sudo tee -a /etc/apt/sources.list
+
+# 鏇存柊鍖呭垪琛?sudo apt update
+
+# 瀹夎鍖?sudo apt install package-name
+                    </div>
+
+                    <h3 class="section-title">鎵归噺涓婁紶璇存槑</h3>
+                    <ul class="usage-list">
+                        <li>鏀寔鍚屾椂涓婁紶澶氫釜 .deb 鏂囦欢</li>
+                        <li>鐩稿悓鐗堟湰鐨勫寘浼氳瑕嗙洊</li>
+                        <li>涓嶅悓鐗堟湰鐨勫寘浼氫繚鐣?/li>
+                        <li>鏃犳枃浠舵暟閲忛檺鍒?/li>
+                    </ul>
+                </div>
+
+                <!-- 闀滃儚鍚屾妯″潡 -->
+                <div id="mirrorSyncSection" style="display: none;">
+                    <div class="page-header">
+                        <div class="breadcrumb">
+                            <span>棣栭〉</span>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="text-blue-600 font-medium">闀滃儚鍚屾</span>
+                        </div>
+                        <h1 class="page-title">浠撳簱闀滃儚鍚屾</h1>
+                        <p class="page-subtitle">閫氳繃apt-mirror宸ュ叿鑷姩鍚屾鎸囧畾鐨凨ylin Desktop杞欢浠撳簱</p>
+                    </div>
+
+                    <!-- 缁熻鍗＄墖 -->
+                    <div class="dashboard-cards mb-8">
+                        <div class="dashboard-card border-l-4 border-blue-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-blue-500 to-indigo-600">
+                                <span class="text-2xl">馃攧</span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">閰嶇疆鎬绘暟</div>
+                                <div class="dashboard-card-value" id="mirrorConfigCount">0</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card border-l-4 border-green-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-green-500 to-emerald-600">
+                                <span class="text-2xl">鉁?/span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">鎴愬姛鍚屾</div>
+                                <div class="dashboard-card-value" id="mirrorSyncSuccess">0</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card border-l-4 border-yellow-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-yellow-500 to-orange-600">
+                                <span class="text-2xl">鈴?/span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">杩涜涓?/div>
+                                <div class="dashboard-card-value" id="mirrorSyncRunning">0</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card border-l-4 border-red-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-red-500 to-rose-600">
+                                <span class="text-2xl">鉂?/span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">澶辫触</div>
+                                <div class="dashboard-card-value" id="mirrorSyncFailed">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 鎿嶄綔鎸夐挳鏍?-->
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <span class="text-xl">鈿欙笍</span>
+                            </div>
+                            <div class="text-white">
+                                <h3 class="font-semibold text-lg">蹇€熸搷浣?/h3>
+                                <p class="text-sm opacity-90">澶囦唤鍜屾仮澶嶆偍鐨勯暅鍍忛厤缃?/p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button class="btn flex items-center gap-2 py-2.5 px-5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-xl transition-all backdrop-blur-sm shadow-md hover:shadow-lg transform hover:scale-105" onclick="backupMirrorConfigs()">
+                                <span>馃捑</span>
+                                <span class="font-medium">澶囦唤閰嶇疆</span>
+                            </button>
+                            <button class="btn flex items-center gap-2 py-2.5 px-5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-xl transition-all backdrop-blur-sm shadow-md hover:shadow-lg transform hover:scale-105" onclick="restoreMirrorConfigs()">
+                                <span>馃摛</span>
+                                <span class="font-medium">鎭㈠閰嶇疆</span>
+                            </button>
+                            <button class="btn flex items-center gap-2 py-2.5 px-5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-xl transition-all backdrop-blur-sm shadow-md hover:shadow-lg transform hover:scale-105" onclick="checkRunningTasks()">
+                                <span>馃攧</span>
+                                <span class="font-medium">鏌ョ湅鍚屾杩涘害</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 闀滃儚閰嶇疆鍒涘缓 -->
+                    <div class="card mb-8 overflow-hidden" style="border-radius: 1rem;">
+                        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white p-8">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg">
+                                    <span class="text-3xl">鉃?/span>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold">鍒涘缓闀滃儚閰嶇疆</h3>
+                                    <p class="text-sm opacity-90 mt-1">璁剧疆鏂扮殑浠撳簱闀滃儚鍚屾閰嶇疆</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-8 bg-white">
+                            <form id="mirrorConfigForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="form-group">
+                                    <label for="mirrorName" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">馃彿锔?/span>
+                                        閰嶇疆鍚嶇О
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorName" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="渚嬪: ubuntu-focal" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">馃摑</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">涓洪厤缃捣涓€涓槗浜庤瘑鍒殑鍚嶇О</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorUrl" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">馃敆</span>
+                                        浠撳簱婧怳RL
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorUrl" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="渚嬪: http://archive.ubuntu.com/ubuntu/" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">馃寪</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">杈撳叆瀹屾暣鐨勪粨搴撴簮鍦板潃</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorCodename" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">馃彿锔?/span>
+                                        Codename
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorCodename" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="渚嬪: focal" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">馃彿锔?/span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">濡? focal, jammy, bullseye</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorComponents" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">馃摝</span>
+                                        Components
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorComponents" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="渚嬪: main universe multiverse" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">馃摝</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">鐢ㄧ┖鏍煎垎闅斿涓粍浠?/p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorArchitectures" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">馃枼锔?/span>
+                                        Architectures
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorArchitectures" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="渚嬪: amd64 i386" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">馃枼锔?/span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">鐢ㄧ┖鏍煎垎闅斿涓灦鏋?/p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorBandwidth" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">馃搳</span>
+                                        甯﹀闄愬埗 (KB/s)
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" id="mirrorBandwidth" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="渚嬪: 1024">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">馃搳</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">鐣欑┖琛ㄧず鏃犻檺鍒?/p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorSchedule" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">鈴?/span>
+                                        鍚屾鍛ㄦ湡
+                                    </label>
+                                    <div class="relative">
+                                        <select id="mirrorSchedule" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white appearance-none cursor-pointer">
+                                            <option value="">鎵嬪姩鍚屾</option>
+                                            <option value="0 0 * * *">姣忓ぉ</option>
+                                            <option value="0 0 * * 0">姣忓懆</option>
+                                            <option value="0 0 1 * *">姣忔湀</option>
+                                        </select>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">鈴?/span>
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">鈻?/span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">璁剧疆鑷姩鍚屾鐨勬椂闂撮棿闅?/p>
+                                </div>
+                                <div class="form-group md:col-span-2 lg:col-span-3 flex items-end">
+                                    <button type="submit" class="btn w-full py-4 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-xl transition-all transform hover:scale-102 shadow-lg hover:shadow-xl font-semibold text-lg flex items-center justify-center gap-3">
+                                        <span class="text-2xl">鉃?/span>
+                                        <span>鍒涘缓閰嶇疆</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 闀滃儚閰嶇疆鍒楄〃 -->
+                    <div class="card overflow-hidden" style="border-radius: 1rem;">
+                        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white p-8">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg">
+                                        <span class="text-3xl">馃搵</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-2xl font-bold">闀滃儚閰嶇疆鍒楄〃</h3>
+                                        <p class="text-sm opacity-90 mt-1">绠＄悊宸插垱寤虹殑闀滃儚閰嶇疆</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white bg-opacity-20 rounded-xl px-4 py-2 backdrop-blur-sm">
+                                    <span class="text-sm">鍏?/span>
+                                    <span class="font-bold text-xl" id="mirrorConfigTotal">0</span>
+                                    <span class="text-sm">涓厤缃?/span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-8 bg-gradient-to-b from-gray-50 to-white">
+                            <div id="mirrorConfigList" class="space-y-6">
+                                <!-- 闀滃儚閰嶇疆椤瑰皢閫氳繃JavaScript鍔ㄦ€佹坊鍔?-->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 浠诲姟绠＄悊妯℃€佹 -->
+                    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto transform transition-all duration-500 scale-95 opacity-0" id="taskModalContent">
+                            <div class="p-6">
+                                <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                                    <div>
+                                        <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2" id="taskModalTitle">
+                                            <span class="text-blue-600">鈿欙笍</span>
+                                            浠诲姟绠＄悊
+                                        </h3>
+                                        <p class="text-sm text-gray-500 mt-1">绠＄悊闀滃儚鍚屾浠诲姟锛岃缃嚜鍔ㄥ悓姝ュ懆鏈?/p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" onclick="closeTaskModal()" aria-label="鍏抽棴">
+                                        <span class="text-xl">鉁?/span>
+                                    </button>
+                                </div>
+                                
+                                <!-- 浠诲姟鍒楄〃 -->
+                                <div class="mb-8">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                            <span class="text-blue-600">馃搵</span>
+                                            鍚屾浠诲姟鍒楄〃
+                                        </h4>
+                                        <span class="text-sm text-gray-500" id="taskCount">0 涓换鍔?/span>
+                                    </div>
+                                    <div id="taskListContainer" class="space-y-4">
+                                        <!-- 浠诲姟椤瑰皢閫氳繃JavaScript鍔ㄦ€佹坊鍔?-->
+                                        <div class="text-center py-12 text-gray-500" id="emptyTaskState">
+                                            <div class="text-4xl mb-4">馃搮</div>
+                                            <p class="text-lg font-medium">鏆傛棤浠诲姟</p>
+                                            <p class="text-sm mt-2">鍒涘缓绗竴涓悓姝ヤ换鍔″紑濮嬭嚜鍔ㄥ寲闀滃儚鍚屾</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 鍒涘缓浠诲姟琛ㄥ崟 -->
+                                <div class="border-t border-gray-100 pt-6">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="text-blue-600">鉃?/span>
+                                        鍒涘缓鏂颁换鍔?                                    </h4>
+                                    <form id="taskForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="form-group">
+                                            <label for="taskName" class="block text-sm font-medium text-gray-700 mb-2">浠诲姟鍚嶇О</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                                    <span>馃摑</span>
+                                                </span>
+                                                <input type="text" id="taskName" class="form-input w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="渚嬪: daily-sync" required>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">涓轰换鍔¤捣涓€涓槗浜庤瘑鍒殑鍚嶇О</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="scheduleExpression" class="block text-sm font-medium text-gray-700 mb-2">鍚屾鍛ㄦ湡</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                                    <span>鈴?/span>
+                                                </span>
+                                                <select id="scheduleExpression" class="form-input w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+                                                    <option value="0 0 * * *">姣忓ぉ</option>
+                                                    <option value="0 0 * * 0">姣忓懆</option>
+                                                    <option value="0 0 1 * *">姣忔湀</option>
+                                                    <option value="0 */6 * * *">姣?灏忔椂</option>
+                                                    <option value="0 */3 * * *">姣?灏忔椂</option>
+                                                </select>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">璁剧疆浠诲姟鐨勮嚜鍔ㄦ墽琛屽懆鏈?/p>
+                                        </div>
+                                        <div class="form-group md:col-span-2">
+                                            <button type="submit" class="btn bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105 w-full font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                                <span class="flex items-center justify-center gap-2">
+                                                    <span>鉃?/span>
+                                                    鍒涘缓浠诲姟
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const packagesTable = document.getElementById('packagesTable').querySelector('tbody');
+        const repoSelect = document.getElementById('repoSelect');
+        const repoList = document.getElementById('repoList');
+        const sidebarRepoList = document.getElementById('sidebarRepoList');
+        const searchInput = document.getElementById('searchInput');
+        const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const menuToggle = document.getElementById('menuToggle');
+        const themeToggle = document.getElementById('themeToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const currentRepoBreadcrumb = document.getElementById('currentRepoBreadcrumb');
+        const currentRepoValue = document.getElementById('currentRepoValue');
+        const packageCountValue = document.getElementById('packageCountValue');
+        const repoCountValue = document.getElementById('repoCountValue');
+        const lastUploadValue = document.getElementById('lastUploadValue');
+        
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentRepo = 'default';
+        let searchKeyword = '';
+        let selectedPackages = new Set();
+        let isLoading = false;
+        let lastUploadTime = '-';
+
+        function showLoading() {
+            isLoading = true;
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            isLoading = false;
+            loadingOverlay.style.display = 'none';
+        }
+
+        // 鑿滃崟鍒囨崲
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        // 鐐瑰嚮閬僵灞傚叧闂晶杈规爮
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // 鐐瑰嚮渚ц竟鏍忓唴鐨勯摼鎺ュ悗鍏抽棴渚ц竟鏍?        document.querySelectorAll('.sidebar-nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            });
+        });
+
+        // 涓洪粯璁や粨搴撻摼鎺ユ坊鍔犵偣鍑讳簨浠?        const defaultRepoLink = document.getElementById('defaultRepoLink');
+        if (defaultRepoLink) {
+            defaultRepoLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                switchToRepo('default');
+                // 鍏抽棴渚ц竟鏍?                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+
+        // 涓婚鍒囨崲
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const themeIcon = themeToggle.querySelector('.theme-icon');
+            if (document.body.classList.contains('dark-mode')) {
+                themeIcon.textContent = '鈽€锔?;
+            } else {
+                themeIcon.textContent = '馃寵';
+            }
+        });
+
+        // 鏇存柊浠〃鐩樻暟鎹?        function updateDashboard() {
+            // 鏇存柊褰撳墠浠撳簱淇℃伅
+            currentRepoBreadcrumb.textContent = currentRepo === 'default' ? '榛樿浠撳簱' : currentRepo;
+            currentRepoValue.textContent = currentRepo;
+            
+            // 鍔犺浇鍖呮暟閲?            fetch(`/packages?repo=${currentRepo}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.pagination) {
+                        packageCountValue.textContent = data.pagination.total;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load package count:', error);
+                });
+            
+            // 鍔犺浇浠撳簱鎬绘暟
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        repoCountValue.textContent = data.repositories.length;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load repo count:', error);
+                });
+            
+            // 鏇存柊鏈€鍚庝笂浼犳椂闂?            lastUploadValue.textContent = lastUploadTime;
+        }
+
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadPackages(currentPage);
+            }
+        });
+        
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadPackages(currentPage);
+            }
+        });
+        
+        repoSelect.addEventListener('change', (event) => {
+            currentRepo = event.target.value;
+            currentPage = 1;
+            searchKeyword = '';
+            searchInput.value = '';
+            selectedPackages.clear();
+            updateBatchDeleteButton();
+            selectAllCheckbox.checked = false;
+            loadPackages(currentPage);
+            updateRepoList();
+            updateRepoInfo();
+        });
+        
+        searchInput.addEventListener('input', debounce((event) => {
+            searchKeyword = event.target.value.trim();
+            currentPage = 1;
+            selectedPackages.clear();
+            updateBatchDeleteButton();
+            selectAllCheckbox.checked = false;
+            loadPackages(currentPage);
+        }, 300));
+        
+        batchDeleteBtn.addEventListener('click', () => {
+            if (selectedPackages.size === 0) {
+                showStatus('璇峰厛閫夋嫨瑕佸垹闄ょ殑鍖?, 'error');
+                return;
+            }
+            
+            if (!confirm(`纭畾瑕佸垹闄ら€変腑鐨?${selectedPackages.size} 涓寘鍚楋紵姝ゆ搷浣滄棤娉曟挙閿€銆俙)) {
+                return;
+            }
+            
+            showLoading();
+            showStatus(`姝ｅ湪鎵归噺鍒犻櫎 ${selectedPackages.size} 涓寘...`, '');
+            
+            const packagesArray = Array.from(selectedPackages);
+            let completedCount = 0;
+            let successCount = 0;
+            
+            packagesArray.forEach(key => {
+                const [packageName, architecture] = key.split('-');
+                fetch(`/packages/${packageName}?architecture=${architecture}&repo=${currentRepo}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        successCount++;
+                    }
+                    completedCount++;
+                    if (completedCount === packagesArray.length) {
+                        hideLoading();
+                        if (successCount === packagesArray.length) {
+                            showStatus(`鎴愬姛鍒犻櫎 ${packagesArray.length} 涓寘`, 'success');
+                        } else {
+                            showStatus(`鍒犻櫎瀹屾垚锛屾垚鍔?${successCount} 涓紝澶辫触 ${packagesArray.length - successCount} 涓猔, 'error');
+                        }
+                        selectedPackages.clear();
+                        updateBatchDeleteButton();
+                        selectAllCheckbox.checked = false;
+                        loadPackages(currentPage);
+                    }
+                })
+                .catch(error => {
+                    console.error(`鍒犻櫎鍖?${packageName} 澶辫触:`, error);
+                    completedCount++;
+                    if (completedCount === packagesArray.length) {
+                        hideLoading();
+                        showStatus(`鎵归噺鍒犻櫎瀹屾垚锛屼絾閮ㄥ垎鍖呭垹闄ゅけ璐, 'error');
+                        selectedPackages.clear();
+                        updateBatchDeleteButton();
+                        selectAllCheckbox.checked = false;
+                        loadPackages(currentPage);
+                    }
+                });
+            });
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function loadRepositories() {
+            showLoading();
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        repoSelect.innerHTML = '';
+                        data.repositories.forEach(repo => {
+                            const option = document.createElement('option');
+                            option.value = repo.name;
+                            option.textContent = repo.name === 'default' ? `${repo.name} (榛樿浠撳簱)` : repo.name;
+                            repoSelect.appendChild(option);
+                        });
+                        repoSelect.value = currentRepo;
+                        updateRepoList();
+                        updateSidebarNavigation(data.repositories);
+                    } else {
+                        showStatus('鍔犺浇浠撳簱鍒楄〃澶辫触: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showStatus('鍔犺浇浠撳簱鍒楄〃澶辫触: ' + error.message, 'error');
+                });
+        }
+        
+        function updateSidebarNavigation(repositories) {
+            if (!repositories) {
+                fetch('/repos')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateSidebarNavigation(data.repositories);
+                        }
+                    });
+                return;
+            }
+            
+            sidebarRepoList.innerHTML = '';
+            repositories.forEach(repo => {
+                if (repo.name !== 'default') {
+                    const li = document.createElement('li');
+                    li.className = 'sidebar-nav-item';
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = `sidebar-nav-link ${repo.name === currentRepo ? 'active' : ''}`;
+                    link.setAttribute('aria-current', repo.name === currentRepo ? 'page' : 'false');
+                    link.innerHTML = `
+                        <span class="sidebar-nav-icon">馃摝</span>
+                        <span>${repo.name}</span>
+                    `;
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        switchToRepo(repo.name);
+                        // 鍏抽棴渚ц竟鏍?                        sidebar.classList.remove('open');
+                        sidebarOverlay.classList.remove('active');
+                    });
+                    li.appendChild(link);
+                    sidebarRepoList.appendChild(li);
+                }
+            });
+        }
+        
+        function switchToRepo(repoName) {
+            currentRepo = repoName;
+            currentPage = 1;
+            searchKeyword = '';
+            searchInput.value = '';
+            selectedPackages.clear();
+            updateBatchDeleteButton();
+            selectAllCheckbox.checked = false;
+            repoSelect.value = repoName;
+            
+            // 淇濆瓨褰撳墠椤甸潰鐘舵€佸埌localStorage
+            localStorage.setItem('currentPage', 'repo');
+            localStorage.setItem('currentRepo', repoName);
+            
+            // 鏄剧ず鎵€鏈夌浉鍏抽〉闈㈠厓绱?            const elementsToShow = [
+                '.page-header',
+                '.dashboard-cards',
+                '.repo-management',
+                '.repo-info',
+                '.upload-section',
+                '.packages-section'
+            ];
+            
+            elementsToShow.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.style.display = 'block';
+                }
+            });
+            
+            // 闅愯棌闀滃儚鍚屾閮ㄥ垎
+            const mirrorSyncSection = document.getElementById('mirrorSyncSection');
+            if (mirrorSyncSection) {
+                mirrorSyncSection.style.display = 'none';
+            }
+            
+            // 鍔犺浇鏁版嵁
+            loadPackages(currentPage);
+            updateRepoList();
+            updateSidebarNavigation();
+            updateRepoInfo();
+            updateDashboard();
+        }
+        
+        function updateRepoList() {
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        repoList.innerHTML = '<h4 style="margin-bottom: var(--spacing-md); font-weight: 600; color: var(--text-primary);">浠撳簱鍒楄〃</h4>';
+                        data.repositories.forEach(repo => {
+                            const repoItem = document.createElement('div');
+                            repoItem.className = `repo-item ${repo.name === currentRepo ? 'active' : ''}`;
+                            repoItem.innerHTML = `
+                                <span class="repo-name">
+                                    ${repo.name}
+                                    ${repo.name === 'default' ? '<span class="repo-badge">榛樿</span>' : ''}
+                                </span>
+                                <button class="btn btn-danger" onclick="deleteRepository('${repo.name}')" ${repo.name === 'default' ? 'disabled' : ''} aria-label="鍒犻櫎浠撳簱">
+                                    鍒犻櫎
+                                </button>
+                            `;
+                            repoList.appendChild(repoItem);
+                        });
+                    }
+                });
+        }
+        
+        function createRepository() {
+            const newRepoName = document.getElementById('newRepoName').value.trim();
+            const newRepoCodename = document.getElementById('newRepoCodename').value.trim();
+            
+            if (!newRepoName) {
+                showStatus('璇疯緭鍏ヤ粨搴撳悕绉?, 'error');
+                return;
+            }
+            
+            const codename = newRepoCodename || 'focal'; // 榛樿codename涓篺ocal
+            
+            showLoading();
+            showStatus(`姝ｅ湪鍒涘缓浠撳簱: ${newRepoName} (codename: ${codename})...`, '');
+            
+            fetch('/repos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: newRepoName, codename: codename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showStatus(`浠撳簱 ${newRepoName} 鍒涘缓鎴愬姛`, 'success');
+                    document.getElementById('newRepoName').value = '';
+                    loadRepositories();
+                    updateRepoInfo();
+                } else {
+                    showStatus(`鍒涘缓浠撳簱澶辫触: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`鍒涘缓浠撳簱澶辫触: ${error.message}`, 'error');
+            });
+        }
+        
+        function deleteRepository(repoName) {
+            if (!confirm(`纭畾瑕佸垹闄や粨搴?${repoName} 鍚楋紵姝ゆ搷浣滄棤娉曟挙閿€锛岃浠撳簱涓殑鎵€鏈夊寘閮藉皢琚垹闄ゃ€俙)) {
+                return;
+            }
+            
+            showLoading();
+            showStatus(`姝ｅ湪鍒犻櫎浠撳簱: ${repoName}...`, '');
+            
+            fetch(`/repos/${repoName}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showStatus(`浠撳簱 ${repoName} 鍒犻櫎鎴愬姛`, 'success');
+                    if (repoName === currentRepo) {
+                        currentRepo = 'default';
+                        currentPage = 1;
+                        searchKeyword = '';
+                        searchInput.value = '';
+                        selectedPackages.clear();
+                        updateBatchDeleteButton();
+                        selectAllCheckbox.checked = false;
+                        repoSelect.value = 'default';
+                    }
+                    loadRepositories();
+                    loadPackages(currentPage);
+                } else {
+                    showStatus(`鍒犻櫎浠撳簱澶辫触: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`鍒犻櫎浠撳簱澶辫触: ${error.message}`, 'error');
+            });
+        }
+        
+        function showStatus(message, type = '') {
+            status.textContent = message;
+            status.className = 'status' + (type ? ' ' + type : '');
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showMessage(message, type = '') {
+            status.textContent = message;
+            status.className = 'status' + (type ? ' ' + type : '');
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('debFiles', files[i]);
+            }
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressItems = document.getElementById('progressItems');
+            progressItems.innerHTML = '';
+            progressContainer.style.display = 'block';
+
+            const progressElements = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const progressElement = createProgressElement(file.name);
+                progressItems.appendChild(progressElement);
+                progressElements.push({
+                    element: progressElement,
+                    percentage: progressElement.querySelector('.progress-percentage'),
+                    bar: progressElement.querySelector('.progress-bar')
+                });
+            }
+
+            formData.append('repo', currentRepo);
+            
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    progressElements.forEach(({ percentage, bar }) => {
+                        percentage.textContent = `${percentComplete}%`;
+                        bar.style.width = `${percentComplete}%`;
+                    });
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        const successCount = data.results.filter(r => r.success).length;
+                        const failCount = data.results.filter(r => !r.success).length;
+                        
+                        let message = `鎴愬姛涓婁紶 ${successCount} 涓枃浠跺埌浠撳簱 ${currentRepo}`;
+                        if (failCount > 0) {
+                            message += `锛屽け璐?${failCount} 涓枃浠禶;
+                        }
+                        
+                        showStatus(message, 'success');
+                        
+                        // 鏇存柊鏈€鍚庝笂浼犳椂闂?                        const now = new Date();
+                        lastUploadTime = now.toLocaleString();
+                        updateDashboard();
+                        
+                        data.results.forEach((result, index) => {
+                            const { percentage, bar } = progressElements[index];
+                            if (result.success) {
+                                percentage.textContent = '100%';
+                                percentage.className = 'progress-percentage completed';
+                                bar.style.width = '100%';
+                                bar.className = 'progress-bar completed';
+                            } else {
+                                percentage.textContent = '澶辫触';
+                                percentage.className = 'progress-percentage failed';
+                                bar.className = 'progress-bar failed';
+                            }
+                        });
+                        
+                        loadPackages(currentPage);
+                    } else {
+                        showStatus(`閿欒: ${data.error}`, 'error');
+                        
+                        progressElements.forEach(({ percentage, bar }) => {
+                            percentage.textContent = '澶辫触';
+                            percentage.className = 'progress-percentage failed';
+                            bar.className = 'progress-bar failed';
+                        });
+                    }
+                } catch (error) {
+                    showStatus(`瑙ｆ瀽鍝嶅簲澶辫触: ${error.message}`, 'error');
+                    
+                    progressElements.forEach(({ percentage, bar }) => {
+                        percentage.textContent = '澶辫触';
+                        percentage.className = 'progress-percentage failed';
+                        bar.className = 'progress-bar failed';
+                    });
+                }
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 5000);
+            });
+
+            xhr.addEventListener('error', () => {
+                showStatus('涓婁紶澶辫触: 缃戠粶閿欒', 'error');
+                
+                progressElements.forEach(({ percentage, bar }) => {
+                    percentage.textContent = '澶辫触';
+                    percentage.className = 'progress-percentage failed';
+                    bar.className = 'progress-bar failed';
+                });
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 5000);
+            });
+
+            xhr.open('POST', '/upload');
+            xhr.send(formData);
+
+            event.target.value = '';
+        }
+
+        function createProgressElement(filename) {
+            const div = document.createElement('div');
+            div.className = 'progress-item';
+            div.innerHTML = `
+                <div class="progress-header-row">
+                    <span class="progress-filename">${filename}</span>
+                    <span class="progress-percentage">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+            `;
+            return div;
+        }
+
+        function loadPackages(page = 1) {
+            showLoading();
+            fetch(`/packages?page=${page}&limit=10&repo=${currentRepo}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    packagesTable.innerHTML = '';
+                    selectedPackages.clear();
+                    updateBatchDeleteButton();
+                    selectAllCheckbox.checked = false;
+                    
+                    if (data.packages && data.packages.length > 0) {
+                        let filteredPackages = data.packages;
+                        if (searchKeyword) {
+                            filteredPackages = data.packages.filter(pkg => 
+                                pkg.package.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                                pkg.version.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                                pkg.architecture.toLowerCase().includes(searchKeyword.toLowerCase())
+                            );
+                        }
+                        
+                        if (filteredPackages.length > 0) {
+                            filteredPackages.forEach(pkg => {
+                                const row = packagesTable.insertRow();
+                                row.setAttribute('data-package', pkg.package);
+                                row.setAttribute('data-architecture', pkg.architecture);
+                                
+                                const checkboxCell = row.insertCell(0);
+                                checkboxCell.className = 'checkbox-cell';
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.className = 'package-checkbox';
+                                checkbox.onchange = () => togglePackageSelection(pkg.package, pkg.architecture, checkbox.checked);
+                                checkbox.setAttribute('aria-label', `閫夋嫨鍖?${pkg.package}`);
+                                checkboxCell.appendChild(checkbox);
+                                
+                                row.insertCell(1).textContent = pkg.package;
+                                row.insertCell(2).textContent = pkg.version;
+                                row.insertCell(3).textContent = pkg.architecture;
+                                
+                                const actionCell = row.insertCell(4);
+                                const deleteBtn = document.createElement('button');
+                                deleteBtn.textContent = '鍒犻櫎';
+                                deleteBtn.className = 'btn btn-danger';
+                                deleteBtn.onclick = () => deletePackage(pkg.package, pkg.architecture);
+                                deleteBtn.setAttribute('aria-label', `鍒犻櫎鍖?${pkg.package}`);
+                                actionCell.appendChild(deleteBtn);
+                            });
+                            
+                            currentPage = data.pagination.page;
+                            totalPages = data.pagination.totalPages;
+                            
+                            document.getElementById('pageInfo').textContent = `绗?${currentPage} 椤碉紝鍏?${totalPages} 椤?(浠撳簱: ${currentRepo}${searchKeyword ? `, 鎼滅储: "${searchKeyword}"` : ''})`;
+                            document.getElementById('prevPage').disabled = currentPage === 1;
+                            document.getElementById('nextPage').disabled = currentPage === totalPages;
+                        } else {
+                            const row = packagesTable.insertRow();
+                            row.insertCell(0).textContent = `娌℃湁鎵惧埌鍖归厤"${searchKeyword}"鐨勫寘`;
+                            row.cells[0].colSpan = 5;
+                            row.cells[0].style.textAlign = 'center';
+                            row.cells[0].style.color = 'var(--text-secondary)';
+                            
+                            document.getElementById('pageInfo').textContent = `绗?1 椤碉紝鍏?1 椤?(浠撳簱: ${currentRepo})`;
+                            document.getElementById('prevPage').disabled = true;
+                            document.getElementById('nextPage').disabled = true;
+                        }
+                    } else {
+                        const row = packagesTable.insertRow();
+                        row.insertCell(0).textContent = `浠撳簱 ${currentRepo} 涓殏鏃犲寘`;
+                        row.cells[0].colSpan = 5;
+                        row.cells[0].style.textAlign = 'center';
+                        row.cells[0].style.color = 'var(--text-secondary)';
+                        
+                        document.getElementById('pageInfo').textContent = `绗?1 椤碉紝鍏?1 椤?(浠撳簱: ${currentRepo})`;
+                        document.getElementById('prevPage').disabled = true;
+                        document.getElementById('nextPage').disabled = true;
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    packagesTable.innerHTML = '';
+                    const row = packagesTable.insertRow();
+                    row.insertCell(0).textContent = `鍔犺浇澶辫触: ${error.message}`;
+                    row.cells[0].colSpan = 5;
+                    row.cells[0].style.textAlign = 'center';
+                    row.cells[0].style.color = 'var(--error-color)';
+                });
+        }
+
+        function deletePackage(packageName, architecture) {
+            if (!confirm(`纭畾瑕佸垹闄や粨搴?${currentRepo} 涓殑鍖?${packageName} (${architecture}) 鍚楋紵姝ゆ搷浣滄棤娉曟挙閿€銆俙)) {
+                return;
+            }
+
+            showLoading();
+            showStatus(`姝ｅ湪鍒犻櫎浠撳簱 ${currentRepo} 涓殑鍖?${packageName}...`, '');
+
+            fetch(`/packages/${packageName}?architecture=${architecture}&repo=${currentRepo}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showStatus(`鎴愬姛鍒犻櫎浠撳簱 ${currentRepo} 涓殑鍖?${packageName}`, 'success');
+                    const key = `${packageName}-${architecture}`;
+                    selectedPackages.delete(key);
+                    updateBatchDeleteButton();
+                    updateSelectAllCheckbox();
+                    loadPackages(currentPage);
+                } else {
+                    showStatus(`鍒犻櫎澶辫触: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`鍒犻櫎澶辫触: ${error.message}`, 'error');
+            });
+        }
+
+        function togglePackageSelection(packageName, architecture, isChecked) {
+            const key = `${packageName}-${architecture}`;
+            if (isChecked) {
+                selectedPackages.add(key);
+            } else {
+                selectedPackages.delete(key);
+            }
+            updateBatchDeleteButton();
+            updateSelectAllCheckbox();
+        }
+
+        function toggleSelectAll(checkbox) {
+            const checkboxes = packagesTable.querySelectorAll('.package-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+                const row = cb.closest('tr');
+                const packageName = row.getAttribute('data-package');
+                const architecture = row.getAttribute('data-architecture');
+                togglePackageSelection(packageName, architecture, checkbox.checked);
+            });
+        }
+
+        function updateSelectAllCheckbox() {
+            const checkboxes = packagesTable.querySelectorAll('.package-checkbox');
+            const total = checkboxes.length;
+            const checked = packagesTable.querySelectorAll('.package-checkbox:checked').length;
+            selectAllCheckbox.checked = total > 0 && checked === total;
+        }
+
+        function updateBatchDeleteButton() {
+            batchDeleteBtn.disabled = selectedPackages.size === 0;
+            if (selectedPackages.size > 0) {
+                batchDeleteBtn.textContent = `鎵归噺鍒犻櫎 (${selectedPackages.size})`;
+            } else {
+                batchDeleteBtn.textContent = '鎵归噺鍒犻櫎';
+            }
+        }
+
+        function updateRepoInfo() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.host;
+            const baseUrl = `${protocol}//${hostname}`;
+            const repoUrl = `${baseUrl}/repo/${currentRepo}`;
+            
+            // 鑾峰彇浠撳簱淇℃伅
+            fetch(`/repos/${currentRepo}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const codename = data.repository.codename;
+                        const repoUrlInfo = document.getElementById('repoUrlInfo');
+                        repoUrlInfo.innerHTML = `
+<div class="flex items-center justify-between mb-2">
+    <span>HTTP璁块棶:</span>
+    <div class="flex items-center gap-2">
+        <a href="${repoUrl}" target="_blank" class="text-blue-600 hover:underline font-medium">${repoUrl}</a>
+        <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100" onclick="copyToClipboard('${repoUrl}')" aria-label="澶嶅埗鍦板潃">
+            <span>馃搵</span>
+        </button>
+    </div>
+</div>
+<div>鏂囦欢鐩綍: /app/repos/${currentRepo} (瀹瑰櫒鍐?</div>
+<div>鏁版嵁鎸佷箙鍖? ./repos/${currentRepo} (瀹夸富鏈?</div>
+<div>Codename: ${codename}</div>
+`;
+                        
+                        const clientUsageInfo = document.getElementById('clientUsageInfo');
+                        clientUsageInfo.textContent = `# 娣诲姞浠撳簱婧愶紙鏃犻渶瀵煎叆鍏挜锛?echo "deb [trusted=yes] ${repoUrl} ${codename} main" | sudo tee -a /etc/apt/sources.list
+
+# 鏇存柊鍖呭垪琛?sudo apt update
+
+# 瀹夎鍖?sudo apt install package-name`;
+                        
+                        // 鏇存柊codename淇℃伅鏄剧ず
+                        const codenameInfo = document.querySelector('.info-grid .info-item:nth-child(1) .info-value');
+                        if (codenameInfo) {
+                            codenameInfo.textContent = codename;
+                        }
+                        
+
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to get repository info:', error);
+                    // 澶辫触鏃朵娇鐢ㄩ粯璁ゅ€?                    const repoUrlInfo = document.getElementById('repoUrlInfo');
+                    repoUrlInfo.textContent = `HTTP璁块棶: ${repoUrl}
+鏂囦欢鐩綍: /app/repos/${currentRepo} (瀹瑰櫒鍐?
+鏁版嵁鎸佷箙鍖? ./repos/${currentRepo} (瀹夸富鏈?
+Codename: focal`;
+                    
+                    const clientUsageInfo = document.getElementById('clientUsageInfo');
+                    clientUsageInfo.textContent = `# 娣诲姞浠撳簱婧愶紙鏃犻渶瀵煎叆鍏挜锛?echo "deb [trusted=yes] ${repoUrl} focal main" | sudo tee -a /etc/apt/sources.list
+
+# 鏇存柊鍖呭垪琛?sudo apt update
+
+# 瀹夎鍖?sudo apt install package-name`;
+                });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                searchInput.value = '';
+                searchKeyword = '';
+                currentPage = 1;
+                selectedPackages.clear();
+                updateBatchDeleteButton();
+                selectAllCheckbox.checked = false;
+                loadPackages(currentPage);
+            }
+        });
+
+        // 澶嶅埗鍒板壀璐存澘鍔熻兘
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showMessage('鍦板潃宸插鍒跺埌鍓创鏉匡紒', 'success');
+                })
+                .catch(err => {
+                    console.error('澶嶅埗澶辫触:', err);
+                    showMessage('澶嶅埗澶辫触锛岃鎵嬪姩澶嶅埗', 'error');
+                });
+        }
+
+        // 鏇存柊闀滃儚缁熻鍗＄墖
+        function updateMirrorStats(configCount) {
+            const configCountEl = document.getElementById('mirrorConfigCount');
+            const configTotalEl = document.getElementById('mirrorConfigTotal');
+            
+            if (configCountEl) {
+                configCountEl.textContent = configCount;
+            }
+            if (configTotalEl) {
+                configTotalEl.textContent = configCount;
+            }
+        }
+
+        // 闀滃儚鍚屾鍔熻兘
+        function switchToMirrors() {
+            // 淇濆瓨褰撳墠椤甸潰鐘舵€佸埌localStorage
+            localStorage.setItem('currentPage', 'mirror');
+            
+            // 闅愯棌鍏朵粬閮ㄥ垎
+            const elementsToHide = [
+                '.page-header',
+                '.dashboard-cards',
+                '.repo-management',
+                '.repo-info',
+                '.upload-section',
+                '.packages-section'
+            ];
+            
+            elementsToHide.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.style.display = 'none';
+                }
+            });
+            
+            // 鏄剧ず闀滃儚鍚屾閮ㄥ垎
+            const mirrorSyncSection = document.getElementById('mirrorSyncSection');
+            if (mirrorSyncSection) {
+                mirrorSyncSection.style.display = 'block';
+            }
+            
+            // 鍔犺浇闀滃儚閰嶇疆鍒楄〃
+            loadMirrorConfigs();
+            
+            // 鍔犺浇淇濆瓨鐨勮〃鍗曟暟鎹?            loadMirrorFormData();
+        }
+
+        function loadMirrorConfigs() {
+            fetch('/mirrors')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 鏇存柊缁熻鍗＄墖
+                        updateMirrorStats(data.mirrors.length);
+                        
+                        // 妫€鏌ユ鍦ㄨ繍琛岀殑浠诲姟
+                        fetch('/mirrors/tasks')
+                            .then(response => response.json())
+                            .then(taskData => {
+                                if (taskData.success) {
+                                    const runningTasks = taskData.tasks.filter(task => task.status === 'running');
+                                    const runningCount = runningTasks.length;
+                                    const completedTasks = taskData.tasks.filter(task => task.status === 'completed');
+                                    const completedCount = completedTasks.length;
+                                    const failedTasks = taskData.tasks.filter(task => task.status === 'failed');
+                                    const failedCount = failedTasks.length;
+                                    
+                                    // 鏇存柊缁熻鍗＄墖
+                                    const runningEl = document.getElementById('mirrorSyncRunning');
+                                    const successEl = document.getElementById('mirrorSyncSuccess');
+                                    const failedEl = document.getElementById('mirrorSyncFailed');
+                                    
+                                    if (runningEl) runningEl.textContent = runningCount;
+                                    if (successEl) successEl.textContent = completedCount;
+                                    if (failedEl) failedEl.textContent = failedCount;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Failed to get tasks:', error);
+                            });
+                        
+                        const configList = document.getElementById('mirrorConfigList');
+                        configList.innerHTML = '';
+                        
+                        if (data.mirrors.length === 0) {
+                            configList.innerHTML = `
+                                <div class="text-center py-16 text-gray-500">
+                                    <div class="text-5xl mb-4">馃攧</div>
+                                    <h4 class="text-lg font-medium mb-2">鏆傛棤闀滃儚閰嶇疆</h4>
+                                    <p class="text-sm">鐐瑰嚮涓婃柟鐨勩€屽垱寤洪厤缃€嶆寜閽坊鍔犳柊鐨勯暅鍍忓悓姝ラ厤缃?/p>
+                                </div>
+                            `;
+                        } else {
+                            data.mirrors.forEach(config => {
+                                const configItem = document.createElement('div');
+                                configItem.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-lg transform hover:translate-y-[-2px] hover:border-blue-200';
+                                configItem.innerHTML = `
+                                    <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-4 mb-4">
+                                                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-2xl shadow-md">
+                                                    馃攧
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-semibold text-lg text-gray-900">${config.name}</h4>
+                                                    <p class="text-sm text-gray-600 truncate max-w-md">${config.url}</p>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>馃彿锔?/span>
+                                                        Codename
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium">${config.codename}</span>
+                                                </div>
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>馃摝</span>
+                                                        Components
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium">${config.components.join(' ')}</span>
+                                                </div>
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>馃搳</span>
+                                                        Bandwidth
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium">${config.bandwidth || 'Unlimited'}</span>
+                                                </div>
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50 md:col-span-2 lg:col-span-3">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>馃搧</span>
+                                                        Sync Path
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium truncate">${config.syncPath}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-3 min-w-[130px]">
+                                            <button class="btn bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" onclick="runMirrorSync('${config.name}')">
+                                                <span>馃攧</span>
+                                                <span>鍚屾</span>
+                                            </button>
+                                            <button class="btn bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" onclick="manageTasks('${config.name}')">
+                                                <span>馃搮</span>
+                                                <span>浠诲姟</span>
+                                            </button>
+                                            <button class="btn bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2" onclick="viewMirrorLogs('${config.name}')">
+                                                <span>馃搵</span>
+                                                <span>鏃ュ織</span>
+                                            </button>
+                                            <button class="btn bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2" onclick="deleteMirrorConfig('${config.name}')">
+                                                <span>馃棏锔?/span>
+                                                <span>鍒犻櫎</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                configList.appendChild(configItem);
+                            });
+                        }
+                    } else {
+                        const configList = document.getElementById('mirrorConfigList');
+                        configList.innerHTML = `
+                            <div class="text-center py-12 text-gray-500">
+                                <div class="text-5xl mb-4">鉂?/div>
+                                <h4 class="text-lg font-medium mb-2">鍔犺浇閰嶇疆澶辫触</h4>
+                                <p class="text-sm">璇风◢鍚庨噸璇?/p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load mirror configs:', error);
+                    const configList = document.getElementById('mirrorConfigList');
+                    configList.innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <div class="text-5xl mb-4">鉂?/div>
+                            <h4 class="text-lg font-medium mb-2">鍔犺浇閰嶇疆澶辫触</h4>
+                            <p class="text-sm">璇锋鏌ョ綉缁滆繛鎺ュ悗閲嶈瘯</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // 鍚屾浠诲姟鐘舵€佺鐞?        let currentSyncTaskId = localStorage.getItem('currentSyncTaskId') || null;
+        let syncProgressInterval = null;
+        let isSyncProgressHidden = false;
+        
+        // 鏄剧ず鍚屾杩涘害鏉?        function showSyncProgress() {
+            // 閲嶇疆闅愯棌鏍囧織
+            isSyncProgressHidden = false;
+            
+            const progressContainer = document.createElement('div');
+            progressContainer.id = 'syncProgressContainer';
+            progressContainer.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm';
+            progressContainer.style.position = 'fixed';
+            progressContainer.style.top = '0';
+            progressContainer.style.left = '0';
+            progressContainer.style.right = '0';
+            progressContainer.style.bottom = '0';
+            progressContainer.style.display = 'flex';
+            progressContainer.style.alignItems = 'center';
+            progressContainer.style.justifyContent = 'center';
+            progressContainer.style.zIndex = '9999';
+            progressContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            progressContainer.style.backdropFilter = 'blur(4px)';
+            progressContainer.style.animation = 'fadeIn 0.3s ease-out';
+            progressContainer.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all duration-500 scale-100">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                                <span class="text-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-2 rounded-xl shadow-lg">馃攧</span>
+                                鍚屾杩涘害
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-2" id="syncTaskInfo">浠诲姟ID: <span id="syncTaskId" class="font-mono bg-gray-100 px-2 py-1 rounded text-blue-600">--</span></p>
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 transition-all duration-200 p-3 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transform hover:scale-110 shadow-md" onclick="cancelSync()" aria-label="鍏抽棴鍚屾杩涘害">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-sm font-medium text-gray-700">鍚屾鐘舵€?/span>
+                            <span class="text-sm font-semibold text-blue-600" id="syncProgressPercentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-4 overflow-hidden shadow-sm">
+                            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 h-4 rounded-full transition-all duration-500 ease-out" id="syncProgressBar" style="width: 0%">
+                                <div class="h-full w-full bg-gradient-to-r from-blue-400 to-indigo-500 animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-sm font-medium text-gray-700 mb-6" id="syncStatusText">鍑嗗寮€濮嬪悓姝?..</div>
+                    <div class="flex items-center justify-between mb-6 text-xs text-gray-600 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <span id="syncDownloadInfo">姝ｅ湪璁＄畻涓嬭浇澶у皬...</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-4 text-xs text-gray-500 mb-4">
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-600 rounded-full shadow-sm"></div>
+                            <span>鍑嗗</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
+                            <span>绱㈠紩</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-400 rounded-full shadow-sm"></div>
+                            <span>鍖呮枃浠?/span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-300 rounded-full shadow-sm"></div>
+                            <span>鏁寸悊</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-green-500 rounded-full shadow-sm"></div>
+                            <span>瀹屾垚</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-3 mb-4">
+                        <button id="pauseSyncBtn" class="btn bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2" onclick="pauseSync()">
+                            <span>鈴革笍</span>
+                            <span>鏆傚仠</span>
+                        </button>
+                        <button id="resumeSyncBtn" class="btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" onclick="resumeSync()" style="display: none;">
+                            <span>鈻讹笍</span>
+                            <span>缁х画</span>
+                        </button>
+                    </div>
+                    <div class="mt-4 text-center text-xs text-gray-400">
+                        <p>璇峰嬁鍏抽棴娴忚鍣ㄧ獥鍙ｏ紝鍚屾姝ｅ湪杩涜涓?..</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(progressContainer);
+            
+            // 绔嬪嵆鑾峰彇浠诲姟鐘舵€佸苟鏇存柊杩涘害鏉?            if (currentSyncTaskId) {
+                fetch(`/mirrors/tasks/${currentSyncTaskId}`)
+                    .then(response => response.json())
+                    .then(taskData => {
+                        if (taskData.success) {
+                            const task = taskData.task;
+                            updateSyncProgress(
+                                task.progress,
+                                task.status,
+                                task.error,
+                                task.totalSize,
+                                task.downloadedSize
+                            );
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to get task status:', err);
+                    });
+            }
+        }
+        
+        // 鏇存柊鍚屾杩涘害
+        function updateSyncProgress(progress, status, error, totalSize, downloadedSize) {
+            // 濡傛灉鍚屾杩涘害绐楀彛宸茶闅愯棌锛岀洿鎺ヨ繑鍥?            if (isSyncProgressHidden) {
+                return;
+            }
+            
+            const progressBar = document.getElementById('syncProgressBar');
+            const progressPercentage = document.getElementById('syncProgressPercentage');
+            const statusText = document.getElementById('syncStatusText');
+            const syncTaskIdElement = document.getElementById('syncTaskId');
+            const syncDownloadInfo = document.getElementById('syncDownloadInfo');
+            
+            // 鏇存柊浠诲姟ID
+            if (syncTaskIdElement && currentSyncTaskId) {
+                syncTaskIdElement.textContent = currentSyncTaskId;
+            }
+            
+            // 鏇存柊涓嬭浇淇℃伅
+            if (syncDownloadInfo) {
+                if (totalSize > 0) {
+                    const downloaded = downloadedSize || 0;
+                    const remaining = totalSize - downloaded;
+                    syncDownloadInfo.textContent = `宸蹭笅杞? ${downloaded.toFixed(2)} GiB / 鎬诲ぇ灏? ${totalSize.toFixed(2)} GiB / 鍓╀綑: ${remaining.toFixed(2)} GiB`;
+                } else {
+                    syncDownloadInfo.textContent = '姝ｅ湪璁＄畻涓嬭浇澶у皬...';
+                }
+            }
+            
+            if (progressBar && progressPercentage) {
+                // 璁＄畻瀹為檯杩涘害鐧惧垎姣旓紙浠?0-95%鏄犲皠鍥?-100%锛?                const actualProgress = totalSize > 0 && downloadedSize > 0 ? (downloadedSize / totalSize) * 100 : 0;
+                const displayProgress = Math.min(actualProgress, 100);
+                
+                // 骞虫粦鏇存柊杩涘害鏉?                progressBar.style.width = `${displayProgress}%`;
+                progressPercentage.textContent = `${Math.round(displayProgress)}%`;
+                
+                // 鏍规嵁杩涘害鏀瑰彉鐘舵€佹枃鏈?                let statusMessage = '';
+                if (displayProgress < 5) {
+                    statusMessage = '鍑嗗寮€濮嬪悓姝?..';
+                } else if (displayProgress < 20) {
+                    statusMessage = '姝ｅ湪涓嬭浇绱㈠紩鏂囦欢...';
+                } else if (displayProgress < 90) {
+                    statusMessage = '姝ｅ湪涓嬭浇鍖呮枃浠?..';
+                } else if (displayProgress < 100) {
+                    statusMessage = '姝ｅ湪娓呯悊鍜屾暣鐞?..';
+                } else {
+                    statusMessage = '鍚屾瀹屾垚锛?;
+                }
+                
+                // 鏍规嵁浠诲姟鐘舵€佹洿鏂扮姸鎬佹枃鏈?                switch (status) {
+                    case 'running':
+                        if (statusText) {
+                            statusText.textContent = statusMessage;
+                        }
+                        // 鏇存柊鎸夐挳鐘舵€?                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'flex';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'none';
+                        }
+                        break;
+                    case 'paused':
+                        if (statusText) {
+                            statusText.textContent = '鍚屾宸叉殏鍋?;
+                            statusText.classList.add('text-yellow-600');
+                            statusText.classList.add('font-medium');
+                        }
+                        // 鏇存柊鎸夐挳鐘舵€?                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'none';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'flex';
+                        }
+                        break;
+                    case 'completed':
+                        if (statusText) {
+                            statusText.textContent = '鍚屾瀹屾垚锛?;
+                            statusText.classList.add('text-green-600');
+                            statusText.classList.add('font-medium');
+                        }
+                        if (progressBar) {
+                            progressBar.classList.add('bg-green-600');
+                            progressBar.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700');
+                        }
+                        if (syncDownloadInfo && totalSize > 0) {
+                            syncDownloadInfo.textContent = `宸插畬鎴? ${totalSize.toFixed(2)} GiB`;
+                        }
+                        // 闅愯棌鎺у埗鎸夐挳
+                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'none';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'none';
+                        }
+                        break;
+                    case 'failed':
+                        if (statusText) {
+                            statusText.textContent = `鍚屾澶辫触: ${error || '鏈煡閿欒'}`;
+                            statusText.classList.add('text-red-600');
+                            statusText.classList.add('font-medium');
+                        }
+                        if (progressBar) {
+                            progressBar.classList.add('bg-red-600');
+                            progressBar.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700');
+                        }
+                        // 闅愯棌鎺у埗鎸夐挳
+                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'none';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'none';
+                        }
+                        break;
+                }
+            }
+        }
+        
+        // 闅愯棌鍚屾杩涘害鏉?        function hideSyncProgress() {
+            // 鍏堟竻闄よ疆璇紝闃叉骞叉壈鍏抽棴杩囩▼
+            if (syncProgressInterval) {
+                clearInterval(syncProgressInterval);
+                syncProgressInterval = null;
+            }
+            
+            // 璁剧疆鏍囧織锛岄槻姝㈣疆璇㈣姹傝繑鍥炲悗鍐嶆鏇存柊杩涘害
+            isSyncProgressHidden = true;
+            
+            const progressContainer = document.getElementById('syncProgressContainer');
+            if (progressContainer) {
+                // 娣诲姞鍏抽棴鍔ㄧ敾
+                const progressCard = progressContainer.querySelector('div');
+                if (progressCard) {
+                    progressCard.classList.remove('scale-100');
+                    progressCard.classList.add('scale-95', 'opacity-0');
+                }
+                
+                // 鍔ㄧ敾缁撴潫鍚庣Щ闄ゅ厓绱?                setTimeout(() => {
+                    progressContainer.remove();
+                }, 300);
+            }
+            
+            currentSyncTaskId = null;
+            localStorage.removeItem('currentSyncTaskId');
+        }
+        
+        // 鍙栨秷鍚屾
+        function cancelSync() {
+            hideSyncProgress();
+        }
+        
+        // 鏆傚仠鍚屾
+        function pauseSync() {
+            if (currentSyncTaskId) {
+                fetch(`/mirrors/tasks/${currentSyncTaskId}/pause`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('鍚屾宸叉殏鍋?, 'success');
+                        // 鏇存柊鎸夐挳鐘舵€?                        document.getElementById('pauseSyncBtn').style.display = 'none';
+                        document.getElementById('resumeSyncBtn').style.display = 'flex';
+                    } else {
+                        showMessage(`鏆傚仠澶辫触: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to pause sync:', error);
+                    showMessage('鏆傚仠澶辫触锛岃绋嶅悗閲嶈瘯', 'error');
+                });
+            }
+        }
+        
+        // 鎭㈠鍚屾
+        function resumeSync() {
+            if (currentSyncTaskId) {
+                fetch(`/mirrors/tasks/${currentSyncTaskId}/resume`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('鍚屾宸叉仮澶?, 'success');
+                        // 鏇存柊鎸夐挳鐘舵€?                        document.getElementById('resumeSyncBtn').style.display = 'none';
+                        document.getElementById('pauseSyncBtn').style.display = 'flex';
+                    } else {
+                        showMessage(`鎭㈠澶辫触: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to resume sync:', error);
+                    showMessage('鎭㈠澶辫触锛岃绋嶅悗閲嶈瘯', 'error');
+                });
+            }
+        }
+        
+        // 杞鍚屾浠诲姟鐘舵€?        function pollSyncTaskStatus(taskId) {
+            // 绔嬪嵆鎵ц涓€娆¤疆璇紝纭繚杩涘害鏉＄珛鍗虫洿鏂?            function fetchTaskStatus() {
+                if (isSyncProgressHidden) return;
+                
+                fetch(`/mirrors/tasks/${taskId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const task = data.task;
+                            updateSyncProgress(task.progress, task.status, task.error, task.totalSize, task.downloadedSize);
+                            
+                            if (task.status === 'completed' || task.status === 'failed') {
+                                setTimeout(hideSyncProgress, 1500);
+                                
+                                if (task.status === 'completed') {
+                                    showMessage('鍚屾鎴愬姛锛?, 'success');
+                                    loadMirrorConfigs();
+                                    // 閲嶆柊鍔犺浇浠撳簱鍒楄〃锛岀‘淇濆悓姝ョ殑浠撳簱鍦ㄨ彍鍗曟爮涓樉绀?                                    loadRepositories();
+                                } else {
+                                    showMessage('鍚屾澶辫触: ' + (task.error || '鏈煡閿欒'), 'error');
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Failed to get task status:', error);
+                        // 涓嶇珛鍗冲仠姝㈣疆璇紝缁х画灏濊瘯
+                        showMessage('鑾峰彇鍚屾鐘舵€佸け璐? ' + error.message, 'error');
+                    });
+            }
+            
+            // 绔嬪嵆鎵ц涓€娆?            fetchTaskStatus();
+            
+            // 璁剧疆杞
+            syncProgressInterval = setInterval(fetchTaskStatus, 1000); // 杞闂撮殧璁句负1绉掞紝纭繚瀹炴椂鍒锋柊
+        }
+        
+        function runMirrorSync(configName) {
+            if (confirm(`纭畾瑕佸悓姝?${configName} 鍚楋紵`)) {
+                showSyncProgress();
+                
+                // 绔嬪嵆寮€濮嬭疆璇换鍔＄姸鎬侊紝浣跨敤涓存椂浠诲姟ID
+                let tempTaskId = 'temp-' + Date.now();
+                currentSyncTaskId = tempTaskId;
+                
+                // 绔嬪嵆鎵ц涓€娆¤疆璇紝鏄剧ず姝ｅ湪鍚姩鍚屾浠诲姟
+                function fetchInitialStatus() {
+                    if (isSyncProgressHidden) return;
+                    
+                    // 鏇存柊杩涘害鏉℃樉绀?                    const progressBar = document.getElementById('syncProgressBar');
+                    const progressPercentage = document.getElementById('syncProgressPercentage');
+                    const statusText = document.getElementById('syncStatusText');
+                    const syncTaskIdElement = document.getElementById('syncTaskId');
+                    const syncDownloadInfo = document.getElementById('syncDownloadInfo');
+                    
+                    if (progressBar) progressBar.style.width = '0%';
+                    if (progressPercentage) progressPercentage.textContent = '0%';
+                    if (statusText) statusText.textContent = '姝ｅ湪鍚姩鍚屾浠诲姟...';
+                    if (syncTaskIdElement) syncTaskIdElement.textContent = '鍚姩涓?..';
+                    if (syncDownloadInfo) syncDownloadInfo.textContent = '姝ｅ湪鍑嗗鍚屾閰嶇疆...';
+                }
+                
+                // 绔嬪嵆鎵ц涓€娆″垵濮嬬姸鎬佹洿鏂?                fetchInitialStatus();
+                
+                // 鍚姩鍚屾浠诲姟
+                fetch(`/mirrors/${configName}/sync`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.taskId) {
+                        currentSyncTaskId = data.taskId;
+                        localStorage.setItem('currentSyncTaskId', currentSyncTaskId);
+                        // 寮€濮嬫寮忚疆璇换鍔＄姸鎬?                        pollSyncTaskStatus(data.taskId);
+                    } else {
+                        hideSyncProgress();
+                        if (data.success) {
+                            showMessage('鍚屾鎴愬姛锛?, 'success');
+                            loadMirrorConfigs();
+                            // 閲嶆柊鍔犺浇浠撳簱鍒楄〃锛岀‘淇濆悓姝ョ殑浠撳簱鍦ㄨ彍鍗曟爮涓樉绀?                            loadRepositories();
+                        } else {
+                            showMessage('鍚屾澶辫触: ' + data.error, 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    hideSyncProgress();
+                    showMessage('鍚屾澶辫触: ' + error.message, 'error');
+                });
+            }
+        }
+
+        function viewMirrorLogs(configName) {
+            fetch(`/mirrors/${configName}/logs`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.logs.length > 0) {
+                        const latestLog = data.logs[0];
+                        fetch(`/mirrors/${configName}/logs/${latestLog.filename}`)
+                            .then(response => response.json())
+                            .then(logData => {
+                                if (logData.success) {
+                                    const logContent = logData.content;
+                                    const logWindow = window.open('', '_blank', 'width=800,height=600');
+                                    logWindow.document.write(`
+                                        <html>
+                                            <head>
+                                                <title>鍚屾鏃ュ織 - ${configName}</title>
+                                                <style>
+                                                    body { font-family: monospace; padding: 20px; }
+                                                    pre { white-space: pre-wrap; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <h1>鍚屾鏃ュ織 - ${configName}</h1>
+                                                <h2>${latestLog.filename}</h2>
+                                                <pre>${logContent}</pre>
+                                            </body>
+                                        </html>
+                                    `);
+                                }
+                            });
+                    } else {
+                        showMessage('娌℃湁鎵惧埌鏃ュ織鏂囦欢', 'info');
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load mirror logs:', error);
+                });
+        }
+
+        function deleteMirrorConfig(configName) {
+            if (confirm(`纭畾瑕佸垹闄?${configName} 鍚楋紵`)) {
+                fetch(`/mirrors/${configName}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('鍒犻櫎鎴愬姛锛?, 'success');
+                        loadMirrorConfigs();
+                    } else {
+                        showMessage('鍒犻櫎澶辫触: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('鍒犻櫎澶辫触: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // 浠诲姟绠＄悊鍔熻兘
+        let currentConfigName = '';
+
+        function manageTasks(configName) {
+            currentConfigName = configName;
+            document.getElementById('taskModalTitle').textContent = `${configName} 浠诲姟绠＄悊`;
+            document.getElementById('taskModal').classList.remove('hidden');
+            loadTaskList(configName);
+        }
+
+        function closeTaskModal() {
+            const taskModal = document.getElementById('taskModal');
+            const taskModalContent = document.getElementById('taskModalContent');
+            
+            // 搴旂敤鍏抽棴鍔ㄧ敾
+            taskModalContent.classList.remove('scale-100', 'opacity-100');
+            taskModalContent.classList.add('scale-95', 'opacity-0');
+            
+            // 鍔ㄧ敾缁撴潫鍚庨殣钘忔ā鎬佹
+            setTimeout(() => {
+                taskModal.classList.add('hidden');
+                currentConfigName = '';
+            }, 300);
+        }
+
+        function loadTaskList(configName) {
+            fetch(`/mirrors/${configName}/tasks`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const taskListContainer = document.getElementById('taskListContainer');
+                        const taskCountElement = document.getElementById('taskCount');
+                        
+                        taskCountElement.textContent = `${data.tasks.length} 涓换鍔;
+                        taskListContainer.innerHTML = '';
+
+                        if (data.tasks.length === 0) {
+                            taskListContainer.innerHTML = `
+                                <div class="text-center py-12 text-gray-500">
+                                    <div class="text-4xl mb-4">馃搮</div>
+                                    <p class="text-lg font-medium">鏆傛棤鍚屾浠诲姟</p>
+                                    <p class="text-sm mt-2">鐐瑰嚮涓嬫柟鐨勩€屽垱寤轰换鍔°€嶆寜閽坊鍔犳柊浠诲姟</p>
+                                </div>
+                            `;
+                        } else {
+                            data.tasks.forEach(task => {
+                                const taskItem = document.createElement('div');
+                                taskItem.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-300 transform hover:translate-y-[-2px] hover:border-blue-200';
+                                taskItem.innerHTML = `
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-4 mb-3">
+                                                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                                                    <span class="text-xl">鈴?/span>
+                                                </div>
+                                                <div>
+                                                    <h5 class="font-semibold text-gray-900 text-lg">${task.name}</h5>
+                                                    <div class="flex items-center gap-2 mt-1">
+                                                        <span class="text-sm text-gray-600">${getScheduleDescription(task.schedule)}</span>
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${task.status === 'running' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                                                            ${task.status === 'running' ? '娲昏穬' : '宸插仠姝?}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 mt-2">
+                                                <span class="flex items-center gap-1">
+                                                    <span>馃搮</span>
+                                                    鍒涘缓鏃堕棿: ${new Date(task.createdAt).toLocaleString()}
+                                                </span>
+                                                <span class="flex items-center gap-1">
+                                                    <span>馃啍</span>
+                                                    ID: ${task.id}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            ${task.status === 'running' ? `
+                                                <button class="text-gray-400 hover:text-yellow-600 transition-colors duration-200 p-2 rounded-full hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2" onclick="stopTask('${configName}', '${task.id}')" aria-label="鍋滄浠诲姟">
+                                                    <span class="text-xl">鈴革笍</span>
+                                                </button>
+                                            ` : `
+                                                <button class="text-gray-400 hover:text-green-600 transition-colors duration-200 p-2 rounded-full hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" onclick="startTask('${configName}', '${task.id}')" aria-label="寮€濮嬩换鍔?>
+                                                    <span class="text-xl">鈻讹笍</span>
+                                                </button>
+                                            `}
+                                            <button class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-2 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2" onclick="deleteTask('${configName}', '${task.id}')" aria-label="鍒犻櫎浠诲姟">
+                                                <span class="text-xl">馃棏锔?/span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                taskListContainer.appendChild(taskItem);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load task list:', error);
+                    const taskListContainer = document.getElementById('taskListContainer');
+                    taskListContainer.innerHTML = `
+                        <div class="text-center py-10 text-gray-500">
+                            <div class="text-4xl mb-3">鉂?/div>
+                            <p class="text-lg font-medium">鍔犺浇浠诲姟澶辫触</p>
+                            <p class="text-sm mt-2">璇风◢鍚庨噸璇?/p>
+                        </div>
+                    `;
+                });
+        }
+
+        function getScheduleDescription(schedule) {
+            const scheduleMap = {
+                '0 0 * * *': '姣忓ぉ',
+                '0 0 * * 0': '姣忓懆',
+                '0 0 1 * *': '姣忔湀',
+                '0 */6 * * *': '姣?灏忔椂',
+                '0 */3 * * *': '姣?灏忔椂'
+            };
+            return scheduleMap[schedule] || schedule;
+        }
+
+        function deleteTask(configName, taskId) {
+            if (confirm('纭畾瑕佸垹闄ゆ浠诲姟鍚楋紵')) {
+                fetch(`/mirrors/${configName}/tasks/${taskId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('浠诲姟鍒犻櫎鎴愬姛锛?, 'success');
+                        loadTaskList(configName);
+                    } else {
+                        showMessage('鍒犻櫎澶辫触: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('鍒犻櫎澶辫触: ' + error.message, 'error');
+                });
+            }
+        }
+
+        function startTask(configName, taskId) {
+            fetch(`/mirrors/${configName}/tasks/${taskId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('浠诲姟鍚姩鎴愬姛锛?, 'success');
+                    loadTaskList(configName);
+                } else {
+                    showMessage('鍚姩澶辫触: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('鍚姩澶辫触: ' + error.message, 'error');
+            });
+        }
+
+        function stopTask(configName, taskId) {
+            fetch(`/mirrors/${configName}/tasks/${taskId}/stop`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('浠诲姟鍋滄鎴愬姛锛?, 'success');
+                    loadTaskList(configName);
+                } else {
+                    showMessage('鍋滄澶辫触: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('鍋滄澶辫触: ' + error.message, 'error');
+            });
+        }
+
+        // 缁戝畾浠诲姟琛ㄥ崟鎻愪氦浜嬩欢
+        function bindTaskFormSubmit() {
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                // 鍏堢Щ闄ょ幇鏈夌殑浜嬩欢鐩戝惉鍣紝閬垮厤閲嶅缁戝畾
+                const newTaskForm = taskForm.cloneNode(true);
+                taskForm.parentNode.replaceChild(newTaskForm, taskForm);
+                
+                newTaskForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const taskName = document.getElementById('taskName').value;
+                    const scheduleExpression = document.getElementById('scheduleExpression').value;
+                    
+                    if (!currentConfigName) {
+                        showMessage('璇峰厛閫夋嫨閰嶇疆', 'error');
+                        return;
+                    }
+                    
+                    if (!taskName || !scheduleExpression) {
+                        showMessage('璇峰～鍐欏畬鏁寸殑浠诲姟淇℃伅', 'error');
+                        return;
+                    }
+                    
+                    showLoading('姝ｅ湪鍒涘缓浠诲姟...');
+                    fetch(`/mirrors/${currentConfigName}/tasks`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            taskName,
+                            scheduleExpression
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        hideLoading();
+                        if (data.success) {
+                            showMessage('浠诲姟鍒涘缓鎴愬姛锛?, 'success');
+                            loadTaskList(currentConfigName);
+                            // 閲嶇疆琛ㄥ崟
+                            newTaskForm.reset();
+                        } else {
+                            showMessage('鍒涘缓澶辫触: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        showMessage('鍒涘缓澶辫触: ' + error.message, 'error');
+                    });
+                });
+            }
+        }
+
+        // 鍦ㄧ鐞嗕换鍔℃椂缁戝畾琛ㄥ崟鎻愪氦浜嬩欢
+        function manageTasks(configName) {
+            currentConfigName = configName;
+            document.getElementById('taskModalTitle').textContent = `${configName} 浠诲姟绠＄悊`;
+            
+            // 鏄剧ず妯℃€佹
+            const taskModal = document.getElementById('taskModal');
+            const taskModalContent = document.getElementById('taskModalContent');
+            
+            taskModal.classList.remove('hidden');
+            // 瑙﹀彂閲嶆帓
+            taskModal.offsetHeight;
+            // 搴旂敤鍔ㄧ敾
+            taskModalContent.classList.remove('scale-95', 'opacity-0');
+            taskModalContent.classList.add('scale-100', 'opacity-100');
+            
+            loadTaskList(configName);
+            // 缁戝畾浠诲姟琛ㄥ崟鎻愪氦浜嬩欢
+            bindTaskFormSubmit();
+        }
+
+        function backupMirrorConfigs() {
+            showLoading('姝ｅ湪澶囦唤閰嶇疆...');
+            fetch('/mirrors/backup')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('澶囦唤澶辫触');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    hideLoading();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `mirror-configs-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showMessage('澶囦唤鎴愬姛锛?, 'success');
+                })
+                .catch(error => {
+                    hideLoading();
+                    showMessage('澶囦唤澶辫触: ' + error.message, 'error');
+                });
+        }
+
+        function restoreMirrorConfigs() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const backupData = JSON.parse(e.target.result);
+                        showLoading('姝ｅ湪鎭㈠閰嶇疆...');
+                        fetch('/mirrors/restore', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ backupData })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            hideLoading();
+                            if (data.success) {
+                                showMessage('鎭㈠鎴愬姛锛?, 'success');
+                                loadMirrorConfigs();
+                            } else {
+                                showMessage('鎭㈠澶辫触: ' + data.error, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            hideLoading();
+                            showMessage('鎭㈠澶辫触: ' + error.message, 'error');
+                        });
+                    } catch (error) {
+                        showMessage('鏃犳晥鐨勫浠芥枃浠?, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // 淇濆瓨闀滃儚閰嶇疆琛ㄥ崟鏁版嵁鍒發ocalStorage
+        function saveMirrorFormData() {
+            const formData = {
+                name: document.getElementById('mirrorName').value,
+                url: document.getElementById('mirrorUrl').value,
+                codename: document.getElementById('mirrorCodename').value,
+                components: document.getElementById('mirrorComponents').value,
+                architectures: document.getElementById('mirrorArchitectures').value,
+                bandwidth: document.getElementById('mirrorBandwidth').value,
+                schedule: document.getElementById('mirrorSchedule').value
+            };
+            localStorage.setItem('mirrorFormData', JSON.stringify(formData));
+        }
+        
+        // 浠巐ocalStorage鍔犺浇闀滃儚閰嶇疆琛ㄥ崟鏁版嵁
+        function loadMirrorFormData() {
+            const savedData = localStorage.getItem('mirrorFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                document.getElementById('mirrorName').value = formData.name || '';
+                document.getElementById('mirrorUrl').value = formData.url || '';
+                document.getElementById('mirrorCodename').value = formData.codename || '';
+                document.getElementById('mirrorComponents').value = formData.components || '';
+                document.getElementById('mirrorArchitectures').value = formData.architectures || '';
+                document.getElementById('mirrorBandwidth').value = formData.bandwidth || '';
+                document.getElementById('mirrorSchedule').value = formData.schedule || '';
+            }
+        }
+        
+        // 缁戝畾闀滃儚閰嶇疆琛ㄥ崟杈撳叆浜嬩欢锛屼繚瀛樺埌localStorage
+        const mirrorForm = document.getElementById('mirrorConfigForm');
+        if (mirrorForm) {
+            const formInputs = mirrorForm.querySelectorAll('input, select');
+            formInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    saveMirrorFormData();
+                });
+            });
+        }
+        
+        // 闀滃儚閰嶇疆琛ㄥ崟鎻愪氦
+        document.getElementById('mirrorConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 楠岃瘉琛ㄥ崟鏁版嵁
+            const name = document.getElementById('mirrorName').value;
+            const url = document.getElementById('mirrorUrl').value;
+            const codename = document.getElementById('mirrorCodename').value;
+            const components = document.getElementById('mirrorComponents').value.split(' ').filter(Boolean);
+            const architectures = document.getElementById('mirrorArchitectures').value.split(' ').filter(Boolean);
+            
+            // 楠岃瘉蹇呭～瀛楁
+            if (!name) {
+                showMessage('璇疯緭鍏ラ厤缃悕绉?, 'error');
+                return;
+            }
+            
+            if (!url) {
+                showMessage('璇疯緭鍏ヤ粨搴撴簮URL', 'error');
+                return;
+            }
+            
+            // 楠岃瘉URL鏍煎紡
+            try {
+                new URL(url);
+            } catch (error) {
+                showMessage('璇疯緭鍏ユ湁鏁堢殑URL鏍煎紡锛屼緥濡? http://archive.kylinos.cn/', 'error');
+                return;
+            }
+            
+            if (!codename) {
+                showMessage('璇疯緭鍏odename', 'error');
+                return;
+            }
+            
+            if (components.length === 0) {
+                showMessage('璇疯緭鍏omponents', 'error');
+                return;
+            }
+            
+            if (architectures.length === 0) {
+                showMessage('璇疯緭鍏rchitectures', 'error');
+                return;
+            }
+            
+            const config = {
+                name: name,
+                url: url,
+                codename: codename,
+                components: components,
+                architectures: architectures,
+                bandwidth: document.getElementById('mirrorBandwidth').value || null,
+                schedule: document.getElementById('mirrorSchedule').value
+            };
+            
+            showLoading('姝ｅ湪鍒涘缓閰嶇疆...');
+            fetch('/mirrors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showMessage('閰嶇疆鍒涘缓鎴愬姛锛?, 'success');
+                    // 娓呯┖琛ㄥ崟
+                    this.reset();
+                    localStorage.removeItem('mirrorFormData'); // 娓呯┖淇濆瓨鐨勮〃鍗曟暟鎹?                    // 纭繚椤甸潰淇濇寔鍦ㄩ暅鍍忓悓姝ラ〉闈?                    switchToMirrors();
+                } else {
+                    showMessage('鍒涘缓澶辫触: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showMessage('鍒涘缓澶辫触: ' + error.message, 'error');
+            });
+        });
+
+        // 浠诲姟绠＄悊鍔熻兘
+        function loadTasks() {
+            // 妯℃嫙浠诲姟鏁版嵁
+            const tasks = [
+                {
+                    id: 1,
+                    name: 'ubuntu-focal',
+                    status: 'completed',
+                    startTime: new Date(Date.now() - 3600000),
+                    endTime: new Date(Date.now() - 3000000),
+                    progress: 100
+                },
+                {
+                    id: 2,
+                    name: 'debian-bullseye',
+                    status: 'running',
+                    startTime: new Date(Date.now() - 600000),
+                    progress: 65
+                },
+                {
+                    id: 3,
+                    name: 'ubuntu-jammy',
+                    status: 'failed',
+                    startTime: new Date(Date.now() - 7200000),
+                    endTime: new Date(Date.now() - 7000000),
+                    error: '缃戠粶杩炴帴瓒呮椂'
+                }
+            ];
+            
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md transform hover:scale-[1.02]';
+                
+                let statusClass = '';
+                let statusText = '';
+                let statusIcon = '';
+                
+                switch (task.status) {
+                    case 'running':
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                        statusText = '杩愯涓?;
+                        statusIcon = '馃攧';
+                        break;
+                    case 'completed':
+                        statusClass = 'bg-green-100 text-green-800';
+                        statusText = '宸插畬鎴?;
+                        statusIcon = '鉁?;
+                        break;
+                    case 'failed':
+                        statusClass = 'bg-red-100 text-red-800';
+                        statusText = '澶辫触';
+                        statusIcon = '鉂?;
+                        break;
+                }
+                
+                taskItem.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${statusIcon}</span>
+                            <span class="font-medium text-gray-900">${task.name}</span>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600 mb-3">
+                        <div class="flex justify-between">
+                            <span>寮€濮嬫椂闂?</span>
+                            <span>${task.startTime.toLocaleString()}</span>
+                        </div>
+                        ${task.endTime ? `
+                        <div class="flex justify-between">
+                            <span>缁撴潫鏃堕棿:</span>
+                            <span>${task.endTime.toLocaleString()}</span>
+                        </div>
+                        ` : ''}
+                        ${task.error ? `
+                        <div class="text-red-600 mt-1">
+                            <span class="font-medium">閿欒:</span> ${task.error}
+                        </div>
+                        ` : ''}
+                        ${task.progress !== undefined ? `
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>杩涘害:</span>
+                                <span>${task.progress}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${task.progress}%"></div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button class="btn btn-sm bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg transition-all text-xs" onclick="viewTaskLog(${task.id})"><span class="mr-1">馃搵</span> 鏌ョ湅鏃ュ織</button>
+                        ${task.status === 'running' ? `<button class="btn btn-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-all text-xs" onclick="stopTask(${task.id})"><span class="mr-1">鈴癸笍</span> 鍋滄</button>` : ''}
+                        ${task.status === 'failed' ? `<button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-all text-xs" onclick="restartTask(${task.id})"><span class="mr-1">馃攧</span> 閲嶈瘯</button>` : ''}
+                    </div>
+                `;
+                
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        function viewTaskLog(taskId) {
+            // 妯℃嫙鏌ョ湅鏃ュ織
+            alert(`鏌ョ湅浠诲姟 ${taskId} 鐨勬棩蹇梎);
+        }
+
+        function stopTask(taskId) {
+            // 妯℃嫙鍋滄浠诲姟
+            alert(`鍋滄浠诲姟 ${taskId}`);
+            loadTasks();
+        }
+
+        function restartTask(taskId) {
+            // 妯℃嫙閲嶅惎浠诲姟
+            alert(`閲嶅惎浠诲姟 ${taskId}`);
+            loadTasks();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 缁戝畾鍏ㄩ€夊閫夋浜嬩欢
+            selectAllCheckbox.addEventListener('change', (event) => {
+                toggleSelectAll(event.target);
+            });
+            loadRepositories();
+            loadPackages(currentPage);
+            updateRepoInfo();
+            updateDashboard();
+            loadTasks();
+            loadMirrorConfigs();
+            
+            // 浠巐ocalStorage鎭㈠椤甸潰鐘舵€?            const savedPage = localStorage.getItem('currentPage');
+            const savedRepo = localStorage.getItem('currentRepo');
+            
+            if (savedPage === 'mirror') {
+                // 鍒囨崲鍒伴暅鍍忓悓姝ラ〉闈?                switchToMirrors();
+            } else if (savedPage === 'repo' && savedRepo) {
+                // 鍒囨崲鍒颁繚瀛樼殑浠撳簱椤甸潰
+                switchToRepo(savedRepo);
+            }
+            
+            // 鏈€鍚庢鏌ユ鍦ㄨ繍琛岀殑浠诲姟锛岀‘淇濋〉闈㈢姸鎬佹仮澶嶅悗鍐嶆樉绀鸿繘搴︽潯
+            checkRunningTasks();
+        });
+
+        // 妫€鏌ユ槸鍚︽湁姝ｅ湪杩愯鐨勪换鍔?        function checkRunningTasks() {
+            fetch('/mirrors/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 鏄剧ず鎵€鏈夋湭瀹屾垚鐨勪换鍔★紙running 鎴?paused锛?                        const activeTasks = data.tasks.filter(task => task.status === 'running' || task.status === 'paused');
+                        if (activeTasks.length > 0) {
+                            // 鏄剧ず鏈€鏂扮殑浠诲姟杩涘害
+                            const latestTask = activeTasks[activeTasks.length - 1];
+                            currentSyncTaskId = latestTask.id;
+                            localStorage.setItem('currentSyncTaskId', currentSyncTaskId);
+                            showSyncProgress();
+                            // 绔嬪嵆鑾峰彇浠诲姟鐘舵€佸苟鏇存柊杩涘害鏉?                            fetch(`/mirrors/tasks/${latestTask.id}`)
+                                .then(response => response.json())
+                                .then(taskData => {
+                                    if (taskData.success) {
+                                        const task = taskData.task;
+                                        updateSyncProgress(
+                                            task.progress,
+                                            task.status,
+                                            task.error,
+                                            task.totalSize,
+                                            task.downloadedSize
+                                        );
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error('Failed to get task status:', err);
+                                });
+                            // 寮€濮嬭疆璇换鍔＄姸鎬?                            pollSyncTaskStatus(latestTask.id);
+                        } else {
+                            showMessage('娌℃湁姝ｅ湪杩愯鎴栧凡鏆傚仠鐨勫悓姝ヤ换鍔?, 'info');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to check running tasks:', error);
+                    showMessage('鑾峰彇浠诲姟鐘舵€佸け璐?, 'error');
+                });
+        }
+    </script>
+</body>
+</html>
