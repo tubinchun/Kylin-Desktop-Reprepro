@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  reprepro-apt:
+    image: reprepro-apt-repository:latest
+    container_name: reprepro-apt-repository
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./repos:/app/repos
+      - ./uploads:/app/uploads
+      - ./mirror-logs:/app/mirror-logs
+      - ./mirror-configs:/app/mirror-configs
+      - ./mirror-syncs:/app/mirror-syncs
+      - ./backups:/app/backups
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Shanghai
+    restart: always
+    network_mode: bridge
+    dns:
+      - 8.8.8.8
+      - 114.114.114.114
+    extra_hosts:
+      - "archive.ubuntu.com:91.189.91.38"
+      - "security.ubuntu.com:91.189.91.39"

@@ -1,0 +1,4030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kylin Desktop 包管理系统，支持多仓库管理、批量上传和删除软件包">
+    <meta name="keywords" content="Kylin Desktop, 包管理, apt仓库, reprepro">
+    <title>Kylin Desktop 包管理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e40af;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --secondary-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --background-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --transition-fast: 150ms ease-in-out;
+            --transition-normal: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            width: 280px;
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal);
+            z-index: 999;
+            transform: translateX(-100%);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            display: none;
+            transition: opacity var(--transition-normal);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .sidebar-header {
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-nav {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .sidebar-nav-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            padding-left: var(--spacing-sm);
+        }
+
+        .sidebar-nav-items {
+            list-style: none;
+        }
+
+        .sidebar-nav-item {
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            outline: none;
+        }
+
+        .sidebar-nav-link:hover {
+            background-color: var(--border-light);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .sidebar-nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar-nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 24px;
+            background-color: white;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .sidebar-nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+        }
+
+        /* 顶部导航栏 */
+        .top-nav {
+            background-color: var(--surface-color);
+            box-shadow: var(--shadow-md);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 64px;
+        }
+
+        .top-nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 var(--spacing-xl);
+            height: 100%;
+        }
+
+        .top-nav-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+        }
+
+        .menu-toggle:hover {
+            background-color: var(--border-light);
+        }
+
+        .top-nav-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-nav-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-secondary {
+            background-color: var(--border-light);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+            transform: translateY(-1px);
+        }
+
+        .theme-icon {
+            font-size: 1.125rem;
+        }
+
+        /* 应用容器 */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            margin-top: 64px;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: var(--spacing-xl);
+            min-height: calc(100vh - 64px);
+            transition: margin-left var(--transition-normal);
+        }
+
+        .task-sidebar {
+            width: 300px;
+            background-color: var(--surface-color);
+            border-left: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal);
+            max-height: 100vh;
+        }
+
+        .task-sidebar-header {
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .task-sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .task-item {
+            background-color: var(--border-light);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            transition: all var(--transition-fast);
+        }
+
+        .task-item:hover {
+            background-color: var(--border-color);
+        }
+
+        .task-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .task-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .task-item-status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-full);
+        }
+
+        .task-item-status.running {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .task-item-status.completed {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .task-item-status.failed {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+        }
+
+        .task-item-details {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .task-item-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-sm);
+        }
+
+        .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+        }
+
+        /* 面包屑导航 */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-muted);
+        }
+
+        /* 仪表盘卡片 */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .dashboard-card {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .dashboard-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .dashboard-card-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-color));
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .dashboard-card-content {
+            flex: 1;
+        }
+
+        .dashboard-card-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .dashboard-card-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* 仓库创建表单 */
+        .repo-create-form {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .repo-create-form .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* 部分标题 */
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        /* 状态徽章 */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+            .content-area {
+                padding: var(--spacing-lg);
+            }
+            .dashboard-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 999;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+                padding: var(--spacing-md);
+            }
+            .top-nav-container {
+                padding: 0 var(--spacing-md);
+            }
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+            .repo-create-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .repo-create-form .form-group {
+                min-width: auto;
+            }
+        }
+
+        /* 深色模式 */
+        .dark-mode {
+            --background-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --border-light: #2a3343;
+        }
+
+        /* 辅助类 */
+        .radius-full {
+            border-radius: 9999px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.2;
+        }
+
+        .page-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition-normal);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .upload-section {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            text-align: center;
+            background-color: rgba(30, 64, 175, 0.02);
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            margin-bottom: var(--spacing-xl);
+            user-select: none;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(30, 64, 175, 0.05);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--spacing-lg);
+            color: white;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .upload-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upload-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-xl);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+            user-select: none;
+            outline: none;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+        }
+
+        .upload-btn:active {
+            transform: translateY(0);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .repo-management {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .repo-controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-md);
+            align-items: end;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .form-select,
+        .form-input {
+            padding: var(--spacing-sm);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            transition: all var(--transition-fast);
+            background-color: var(--surface-color);
+            font-family: var(--font-family);
+            outline: none;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .repo-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .repo-item {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all var(--transition-normal);
+        }
+
+        .repo-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .repo-item.active {
+            border-color: var(--primary-color);
+            background-color: rgba(30, 64, 175, 0.05);
+        }
+
+        .repo-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .repo-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            user-select: none;
+            outline: none;
+            font-family: var(--font-family);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .packages-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .packages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .packages-header-left {
+            flex: 1;
+        }
+
+        .packages-header-right {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            position: relative;
+            width: 250px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            transition: all var(--transition-fast);
+            background-color: var(--surface-color);
+            font-family: var(--font-family);
+            outline: none;
+            padding-right: 2.5rem;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: var(--spacing-sm);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--border-light);
+            padding: var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+        }
+
+        tr:hover td {
+            background-color: rgba(30, 64, 175, 0.02);
+        }
+
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        .select-all-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .package-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .pagination-btn {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-weight: 500;
+            font-family: var(--font-family);
+            outline: none;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .status {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            display: none;
+            animation: slideIn var(--transition-normal);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .status.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .progress-container {
+            margin-bottom: var(--spacing-xl);
+            display: none;
+            animation: slideIn var(--transition-normal);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .progress-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-items {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .progress-item {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: all var(--transition-normal);
+        }
+
+        .progress-item:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .progress-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .progress-filename {
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .progress-percentage {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-left: var(--spacing-md);
+            flex-shrink: 0;
+        }
+
+        .progress-percentage.completed {
+            color: var(--success-color);
+        }
+
+        .progress-percentage.failed {
+            color: var(--error-color);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: var(--border-light);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--secondary-color));
+            border-radius: var(--radius-sm);
+            transition: width var(--transition-normal);
+            width: 0%;
+        }
+
+        .progress-bar.completed {
+            background: linear-gradient(90deg, var(--success-color), #059669);
+        }
+
+        .progress-bar.failed {
+            background: linear-gradient(90deg, var(--error-color), #dc2626);
+        }
+
+        .repo-info {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .repo-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .info-item {
+            padding: var(--spacing-md);
+            background-color: var(--border-light);
+            border-radius: var(--radius-md);
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .code-block {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .usage-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .usage-list li {
+            padding: var(--spacing-sm) 0;
+            padding-left: var(--spacing-xl);
+            position: relative;
+        }
+
+        .usage-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes progress-pulse {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .animate-pulse {
+            animation: progress-pulse 2s ease-in-out infinite;
+            background-size: 200% 200%;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+            .content-area {
+                margin-left: 250px;
+                padding: var(--spacing-lg);
+            }
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+                padding: var(--spacing-md);
+            }
+            .page-title {
+                font-size: 1.75rem;
+            }
+            .repo-controls {
+                grid-template-columns: 1fr;
+            }
+            .repo-list {
+                grid-template-columns: 1fr;
+            }
+            .card {
+                padding: var(--spacing-lg);
+            }
+            .upload-section {
+                padding: var(--spacing-lg);
+            }
+            .packages-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .packages-header-right {
+                justify-content: stretch;
+            }
+            .search-container {
+                width: 100%;
+            }
+            .table-container {
+                font-size: 0.875rem;
+            }
+            th, td {
+                padding: var(--spacing-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-area {
+                padding: var(--spacing-sm);
+            }
+            .page-title {
+                font-size: 1.5rem;
+            }
+            .sidebar-logo-text {
+                font-size: 1rem;
+            }
+            .sidebar-nav-link {
+                padding: var(--spacing-xs) var(--spacing-sm);
+                font-size: 0.875rem;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+    <!-- 顶部导航栏 -->
+    <header class="top-nav">
+        <div class="top-nav-container">
+            <div class="top-nav-left">
+                <button class="menu-toggle" id="menuToggle" aria-label="切换菜单">
+                    <span class="menu-icon">☰</span>
+                </button>
+                <h1 class="top-nav-title">Kylin Desktop 包管理</h1>
+            </div>
+            <div class="top-nav-right">
+                <div class="user-menu">
+                    <button class="btn btn-secondary" id="themeToggle" aria-label="切换主题">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">📦</div>
+                    <div class="sidebar-logo-text">Kylin Desktop</div>
+                </div>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-nav-title">导航</div>
+                <ul class="sidebar-nav-items">
+                    <li class="sidebar-nav-item">
+                        <a href="#dashboard" class="sidebar-nav-link active" id="defaultRepoLink" aria-current="page" onclick="switchToRepo('default'); return false;">
+                            <span class="sidebar-nav-icon">🏠</span>
+                            <span>默认仓库</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-nav-title">仓库</div>
+                <ul class="sidebar-nav-items" id="sidebarRepoList" aria-label="仓库列表">
+                </ul>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-nav-title">镜像同步</div>
+                <ul class="sidebar-nav-items">
+                    <li class="sidebar-nav-item">
+                        <a href="#mirrors" class="sidebar-nav-link" id="mirrorSyncLink" onclick="switchToMirrors(); return false;">
+                            <span class="sidebar-nav-icon">🔄</span>
+                            <span>仓库镜像同步</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="container">
+                <!-- 页面标题和面包屑 -->
+                <div class="page-header">
+                    <div class="breadcrumb">
+                        <span>首页</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span id="currentRepoBreadcrumb">默认仓库</span>
+                    </div>
+                    <h1 class="page-title">仓库管理</h1>
+                    <p class="page-subtitle">管理您的软件包仓库，上传、删除和查看软件包</p>
+                </div>
+
+                <!-- 仓库概览卡片 -->
+                <div class="dashboard-cards">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">📦</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">当前仓库</div>
+                            <div class="dashboard-card-value" id="currentRepoValue">default</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">📋</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">包数量</div>
+                            <div class="dashboard-card-value" id="packageCountValue">0</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">🏗️</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">仓库总数</div>
+                            <div class="dashboard-card-value" id="repoCountValue">0</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-icon">📈</div>
+                        <div class="dashboard-card-content">
+                            <div class="dashboard-card-title">最近上传</div>
+                            <div class="dashboard-card-value" id="lastUploadValue">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 仓库管理部分 -->
+                <div class="card repo-management">
+                    <div class="card-header">
+                        <h2 class="card-title">仓库管理</h2>
+                        <p class="card-description">创建和管理您的软件包仓库</p>
+                    </div>
+                    <div class="repo-controls">
+                        <div class="form-group">
+                            <label class="form-label" for="repoSelect">选择目标仓库</label>
+                            <select id="repoSelect" class="form-select" aria-label="选择仓库">
+                                <option value="default">default (默认仓库)</option>
+                            </select>
+                        </div>
+                        <div class="repo-create-form">
+                            <div class="form-group">
+                                <input type="text" id="newRepoName" class="form-input" placeholder="输入新仓库名称" aria-label="新仓库名称">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="newRepoCodename" class="form-input" placeholder="输入Codename (如: focal)" aria-label="仓库Codename">
+                            </div>
+                            <button class="btn btn-success" onclick="createRepository()" aria-label="创建仓库">创建仓库</button>
+                        </div>
+                    </div>
+                    <div class="repo-list" id="repoList">
+                        <h4 class="section-title">仓库列表</h4>
+                    </div>
+                </div>
+
+                <!-- 上传区域 -->
+                <div class="upload-section" onclick="document.getElementById('fileInput').click()" aria-label="上传文件区域">
+                    <div class="upload-icon">📁</div>
+                    <h2 class="upload-title">上传 Kylin 包</h2>
+                    <p class="upload-description">点击或拖拽文件到此处，支持批量上传多个 .deb 文件</p>
+                    <input type="file" id="fileInput" accept=".deb" multiple aria-label="选择deb文件">
+                    <button class="upload-btn">选择文件</button>
+                </div>
+
+                <!-- 状态和进度 -->
+                <div class="status" id="status" role="status" aria-live="polite"></div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-header">
+                        <h3 class="progress-title">上传进度</h3>
+                    </div>
+                    <div class="progress-items" id="progressItems"></div>
+                </div>
+
+                <!-- 包管理部分 -->
+                <div class="card packages-section">
+                    <div class="packages-header">
+                        <div class="packages-header-left">
+                            <h2 class="card-title">仓库中的包</h2>
+                            <p class="card-description">查看和管理仓库中的软件包</p>
+                        </div>
+                        <div class="packages-header-right">
+                            <div class="search-container">
+                                <input type="text" id="searchInput" class="search-input" placeholder="搜索包名、版本或架构..." aria-label="搜索软件包">
+                                <span class="search-icon">🔍</span>
+                            </div>
+                            <button class="btn btn-danger" id="batchDeleteBtn" disabled style="height: 38px;" aria-label="批量删除">
+                                批量删除
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="packagesTable" aria-label="软件包列表">
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell">
+                                        <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox" aria-label="全选">
+                                    </th>
+                                    <th>包名</th>
+                                    <th>版本</th>
+                                    <th>架构</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination">
+                        <button class="pagination-btn" id="prevPage" disabled aria-label="上一页">上一页</button>
+                        <span class="pagination-info" id="pageInfo">第 1 页，共 1 页</span>
+                        <button class="pagination-btn" id="nextPage" disabled aria-label="下一页">下一页</button>
+                    </div>
+                </div>
+
+                <!-- 仓库信息部分 -->
+                <div class="card repo-info">
+                    <div class="card-header">
+                        <h2 class="card-title">仓库信息</h2>
+                        <p class="card-description">查看仓库详细信息和使用说明</p>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Codename</div>
+                            <div class="info-value" id="repoCodenameValue">focal</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Components</div>
+                            <div class="info-value">main</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Architectures</div>
+                            <div class="info-value">amd64, arm64, i386, loongarch64, source</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">状态</div>
+                            <div class="info-value status-badge" id="repoStatusValue">活跃</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title">仓库访问地址</h3>
+                    <div class="code-block" id="repoUrlInfo">
+HTTP访问: http://loading.../repo
+文件目录: /app/repos/default (容器内)
+数据持久化: ./repos/default (宿主机)
+                    </div>
+
+                    <h3 class="section-title">客户端使用方法</h3>
+                    <div class="code-block" id="clientUsageInfo">
+# 添加仓库源（无需导入公钥）
+echo "deb [trusted=yes] http://loading.../repo focal main" | sudo tee -a /etc/apt/sources.list
+
+# 更新包列表
+sudo apt update
+
+# 安装包
+sudo apt install package-name
+                    </div>
+
+                    <h3 class="section-title">批量上传说明</h3>
+                    <ul class="usage-list">
+                        <li>支持同时上传多个 .deb 文件</li>
+                        <li>相同版本的包会被覆盖</li>
+                        <li>不同版本的包会保留</li>
+                        <li>无文件数量限制</li>
+                    </ul>
+                </div>
+
+                <!-- 镜像同步模块 -->
+                <div id="mirrorSyncSection" style="display: none;">
+                    <div class="page-header">
+                        <div class="breadcrumb">
+                            <span>首页</span>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="text-blue-600 font-medium">镜像同步</span>
+                        </div>
+                        <h1 class="page-title">仓库镜像同步</h1>
+                        <p class="page-subtitle">通过apt-mirror工具自动同步指定的Kylin Desktop软件仓库</p>
+                    </div>
+
+                    <!-- 统计卡片 -->
+                    <div class="dashboard-cards mb-8">
+                        <div class="dashboard-card border-l-4 border-blue-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-blue-500 to-indigo-600">
+                                <span class="text-2xl">🔄</span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">配置总数</div>
+                                <div class="dashboard-card-value" id="mirrorConfigCount">0</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card border-l-4 border-green-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-green-500 to-emerald-600">
+                                <span class="text-2xl">✅</span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">成功同步</div>
+                                <div class="dashboard-card-value" id="mirrorSyncSuccess">0</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card border-l-4 border-yellow-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-yellow-500 to-orange-600">
+                                <span class="text-2xl">⏳</span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">进行中</div>
+                                <div class="dashboard-card-value" id="mirrorSyncRunning">0</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card border-l-4 border-red-500">
+                            <div class="dashboard-card-icon bg-gradient-to-br from-red-500 to-rose-600">
+                                <span class="text-2xl">❌</span>
+                            </div>
+                            <div class="dashboard-card-content">
+                                <div class="dashboard-card-title">失败</div>
+                                <div class="dashboard-card-value" id="mirrorSyncFailed">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮栏 -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <span class="text-xl">⚙️</span>
+                            </div>
+                            <div class="text-white">
+                                <h3 class="font-semibold text-lg">快速操作</h3>
+                                <p class="text-sm opacity-90">备份和恢复您的镜像配置</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button class="btn flex items-center gap-2 py-2.5 px-5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-xl transition-all backdrop-blur-sm shadow-md hover:shadow-lg transform hover:scale-105" onclick="backupMirrorConfigs()">
+                                <span>💾</span>
+                                <span class="font-medium">备份配置</span>
+                            </button>
+                            <button class="btn flex items-center gap-2 py-2.5 px-5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-xl transition-all backdrop-blur-sm shadow-md hover:shadow-lg transform hover:scale-105" onclick="restoreMirrorConfigs()">
+                                <span>📤</span>
+                                <span class="font-medium">恢复配置</span>
+                            </button>
+                            <button class="btn flex items-center gap-2 py-2.5 px-5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-xl transition-all backdrop-blur-sm shadow-md hover:shadow-lg transform hover:scale-105" onclick="checkRunningTasks()">
+                                <span>🔄</span>
+                                <span class="font-medium">查看同步进度</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 镜像配置创建 -->
+                    <div class="card mb-8 overflow-hidden" style="border-radius: 1rem;">
+                        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white p-8">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg">
+                                    <span class="text-3xl">➕</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold">创建镜像配置</h3>
+                                    <p class="text-sm opacity-90 mt-1">设置新的仓库镜像同步配置</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-8 bg-white">
+                            <form id="mirrorConfigForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="form-group">
+                                    <label for="mirrorName" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">🏷️</span>
+                                        配置名称
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorName" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="例如: ubuntu-focal" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📝</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">为配置起一个易于识别的名称</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorUrl" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">🔗</span>
+                                        仓库源URL
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorUrl" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="例如: http://archive.ubuntu.com/ubuntu/" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🌐</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">输入完整的仓库源地址</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorCodename" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">🏷️</span>
+                                        Codename
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorCodename" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="例如: focal" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🏷️</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">如: focal, jammy, bullseye</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorComponents" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">📦</span>
+                                        Components
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorComponents" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="例如: main universe multiverse" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📦</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">用空格分隔多个组件</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorArchitectures" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">🖥️</span>
+                                        Architectures
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="mirrorArchitectures" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="例如: amd64 i386" required>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🖥️</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">用空格分隔多个架构</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorBandwidth" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">📊</span>
+                                        带宽限制 (KB/s)
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" id="mirrorBandwidth" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white" placeholder="例如: 1024">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📊</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">留空表示无限制</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mirrorSchedule" class="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span class="text-blue-600">⏰</span>
+                                        同步周期
+                                    </label>
+                                    <div class="relative">
+                                        <select id="mirrorSchedule" class="form-input w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white appearance-none cursor-pointer">
+                                            <option value="">手动同步</option>
+                                            <option value="0 0 * * *">每天</option>
+                                            <option value="0 0 * * 0">每周</option>
+                                            <option value="0 0 1 * *">每月</option>
+                                        </select>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">⏰</span>
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2 ml-1">设置自动同步的时间间隔</p>
+                                </div>
+                                <div class="form-group md:col-span-2 lg:col-span-3 flex items-end">
+                                    <button type="submit" class="btn w-full py-4 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-xl transition-all transform hover:scale-102 shadow-lg hover:shadow-xl font-semibold text-lg flex items-center justify-center gap-3">
+                                        <span class="text-2xl">➕</span>
+                                        <span>创建配置</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 镜像配置列表 -->
+                    <div class="card overflow-hidden" style="border-radius: 1rem;">
+                        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white p-8">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg">
+                                        <span class="text-3xl">📋</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-2xl font-bold">镜像配置列表</h3>
+                                        <p class="text-sm opacity-90 mt-1">管理已创建的镜像配置</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white bg-opacity-20 rounded-xl px-4 py-2 backdrop-blur-sm">
+                                    <span class="text-sm">共</span>
+                                    <span class="font-bold text-xl" id="mirrorConfigTotal">0</span>
+                                    <span class="text-sm">个配置</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-8 bg-gradient-to-b from-gray-50 to-white">
+                            <div id="mirrorConfigList" class="space-y-6">
+                                <!-- 镜像配置项将通过JavaScript动态添加 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 任务管理模态框 -->
+                    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto transform transition-all duration-500 scale-95 opacity-0" id="taskModalContent">
+                            <div class="p-6">
+                                <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                                    <div>
+                                        <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2" id="taskModalTitle">
+                                            <span class="text-blue-600">⚙️</span>
+                                            任务管理
+                                        </h3>
+                                        <p class="text-sm text-gray-500 mt-1">管理镜像同步任务，设置自动同步周期</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" onclick="closeTaskModal()" aria-label="关闭">
+                                        <span class="text-xl">✕</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- 任务列表 -->
+                                <div class="mb-8">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                            <span class="text-blue-600">📋</span>
+                                            同步任务列表
+                                        </h4>
+                                        <span class="text-sm text-gray-500" id="taskCount">0 个任务</span>
+                                    </div>
+                                    <div id="taskListContainer" class="space-y-4">
+                                        <!-- 任务项将通过JavaScript动态添加 -->
+                                        <div class="text-center py-12 text-gray-500" id="emptyTaskState">
+                                            <div class="text-4xl mb-4">📅</div>
+                                            <p class="text-lg font-medium">暂无任务</p>
+                                            <p class="text-sm mt-2">创建第一个同步任务开始自动化镜像同步</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 创建任务表单 -->
+                                <div class="border-t border-gray-100 pt-6">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="text-blue-600">➕</span>
+                                        创建新任务
+                                    </h4>
+                                    <form id="taskForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="form-group">
+                                            <label for="taskName" class="block text-sm font-medium text-gray-700 mb-2">任务名称</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                                    <span>📝</span>
+                                                </span>
+                                                <input type="text" id="taskName" class="form-input w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="例如: daily-sync" required>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">为任务起一个易于识别的名称</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="scheduleExpression" class="block text-sm font-medium text-gray-700 mb-2">同步周期</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                                    <span>⏰</span>
+                                                </span>
+                                                <select id="scheduleExpression" class="form-input w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+                                                    <option value="0 0 * * *">每天</option>
+                                                    <option value="0 0 * * 0">每周</option>
+                                                    <option value="0 0 1 * *">每月</option>
+                                                    <option value="0 */6 * * *">每6小时</option>
+                                                    <option value="0 */3 * * *">每3小时</option>
+                                                </select>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">设置任务的自动执行周期</p>
+                                        </div>
+                                        <div class="form-group md:col-span-2">
+                                            <button type="submit" class="btn bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-3 rounded-lg transition-all transform hover:scale-105 w-full font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                                <span class="flex items-center justify-center gap-2">
+                                                    <span>➕</span>
+                                                    创建任务
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const packagesTable = document.getElementById('packagesTable').querySelector('tbody');
+        const repoSelect = document.getElementById('repoSelect');
+        const repoList = document.getElementById('repoList');
+        const sidebarRepoList = document.getElementById('sidebarRepoList');
+        const searchInput = document.getElementById('searchInput');
+        const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const menuToggle = document.getElementById('menuToggle');
+        const themeToggle = document.getElementById('themeToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const currentRepoBreadcrumb = document.getElementById('currentRepoBreadcrumb');
+        const currentRepoValue = document.getElementById('currentRepoValue');
+        const packageCountValue = document.getElementById('packageCountValue');
+        const repoCountValue = document.getElementById('repoCountValue');
+        const lastUploadValue = document.getElementById('lastUploadValue');
+        
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentRepo = 'default';
+        let searchKeyword = '';
+        let selectedPackages = new Set();
+        let isLoading = false;
+        let lastUploadTime = '-';
+
+        function showLoading() {
+            isLoading = true;
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            isLoading = false;
+            loadingOverlay.style.display = 'none';
+        }
+
+        // 菜单切换
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        // 点击遮罩层关闭侧边栏
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // 点击侧边栏内的链接后关闭侧边栏
+        document.querySelectorAll('.sidebar-nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            });
+        });
+
+        // 为默认仓库链接添加点击事件
+        const defaultRepoLink = document.getElementById('defaultRepoLink');
+        if (defaultRepoLink) {
+            defaultRepoLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                switchToRepo('default');
+                // 关闭侧边栏
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+
+        // 主题切换
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const themeIcon = themeToggle.querySelector('.theme-icon');
+            if (document.body.classList.contains('dark-mode')) {
+                themeIcon.textContent = '☀️';
+            } else {
+                themeIcon.textContent = '🌙';
+            }
+        });
+
+        // 更新仪表盘数据
+        function updateDashboard() {
+            // 更新当前仓库信息
+            currentRepoBreadcrumb.textContent = currentRepo === 'default' ? '默认仓库' : currentRepo;
+            currentRepoValue.textContent = currentRepo;
+            
+            // 加载包数量
+            fetch(`/packages?repo=${currentRepo}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.pagination) {
+                        packageCountValue.textContent = data.pagination.total;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load package count:', error);
+                });
+            
+            // 加载仓库总数
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        repoCountValue.textContent = data.repositories.length;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load repo count:', error);
+                });
+            
+            // 更新最后上传时间
+            lastUploadValue.textContent = lastUploadTime;
+        }
+
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadPackages(currentPage);
+            }
+        });
+        
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadPackages(currentPage);
+            }
+        });
+        
+        repoSelect.addEventListener('change', (event) => {
+            currentRepo = event.target.value;
+            currentPage = 1;
+            searchKeyword = '';
+            searchInput.value = '';
+            selectedPackages.clear();
+            updateBatchDeleteButton();
+            selectAllCheckbox.checked = false;
+            loadPackages(currentPage);
+            updateRepoList();
+            updateRepoInfo();
+        });
+        
+        searchInput.addEventListener('input', debounce((event) => {
+            searchKeyword = event.target.value.trim();
+            currentPage = 1;
+            selectedPackages.clear();
+            updateBatchDeleteButton();
+            selectAllCheckbox.checked = false;
+            loadPackages(currentPage);
+        }, 300));
+        
+        batchDeleteBtn.addEventListener('click', () => {
+            if (selectedPackages.size === 0) {
+                showStatus('请先选择要删除的包', 'error');
+                return;
+            }
+            
+            if (!confirm(`确定要删除选中的 ${selectedPackages.size} 个包吗？此操作无法撤销。`)) {
+                return;
+            }
+            
+            showLoading();
+            showStatus(`正在批量删除 ${selectedPackages.size} 个包...`, '');
+            
+            const packagesArray = Array.from(selectedPackages);
+            let completedCount = 0;
+            let successCount = 0;
+            
+            packagesArray.forEach(key => {
+                const [packageName, architecture] = key.split('-');
+                fetch(`/packages/${packageName}?architecture=${architecture}&repo=${currentRepo}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        successCount++;
+                    }
+                    completedCount++;
+                    if (completedCount === packagesArray.length) {
+                        hideLoading();
+                        if (successCount === packagesArray.length) {
+                            showStatus(`成功删除 ${packagesArray.length} 个包`, 'success');
+                        } else {
+                            showStatus(`删除完成，成功 ${successCount} 个，失败 ${packagesArray.length - successCount} 个`, 'error');
+                        }
+                        selectedPackages.clear();
+                        updateBatchDeleteButton();
+                        selectAllCheckbox.checked = false;
+                        loadPackages(currentPage);
+                    }
+                })
+                .catch(error => {
+                    console.error(`删除包 ${packageName} 失败:`, error);
+                    completedCount++;
+                    if (completedCount === packagesArray.length) {
+                        hideLoading();
+                        showStatus(`批量删除完成，但部分包删除失败`, 'error');
+                        selectedPackages.clear();
+                        updateBatchDeleteButton();
+                        selectAllCheckbox.checked = false;
+                        loadPackages(currentPage);
+                    }
+                });
+            });
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function loadRepositories() {
+            showLoading();
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        repoSelect.innerHTML = '';
+                        data.repositories.forEach(repo => {
+                            const option = document.createElement('option');
+                            option.value = repo.name;
+                            option.textContent = repo.name === 'default' ? `${repo.name} (默认仓库)` : repo.name;
+                            repoSelect.appendChild(option);
+                        });
+                        repoSelect.value = currentRepo;
+                        updateRepoList();
+                        updateSidebarNavigation(data.repositories);
+                    } else {
+                        showStatus('加载仓库列表失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showStatus('加载仓库列表失败: ' + error.message, 'error');
+                });
+        }
+        
+        function updateSidebarNavigation(repositories) {
+            if (!repositories) {
+                fetch('/repos')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateSidebarNavigation(data.repositories);
+                        }
+                    });
+                return;
+            }
+            
+            sidebarRepoList.innerHTML = '';
+            repositories.forEach(repo => {
+                if (repo.name !== 'default') {
+                    const li = document.createElement('li');
+                    li.className = 'sidebar-nav-item';
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = `sidebar-nav-link ${repo.name === currentRepo ? 'active' : ''}`;
+                    link.setAttribute('aria-current', repo.name === currentRepo ? 'page' : 'false');
+                    link.innerHTML = `
+                        <span class="sidebar-nav-icon">📦</span>
+                        <span>${repo.name}</span>
+                    `;
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        switchToRepo(repo.name);
+                        // 关闭侧边栏
+                        sidebar.classList.remove('open');
+                        sidebarOverlay.classList.remove('active');
+                    });
+                    li.appendChild(link);
+                    sidebarRepoList.appendChild(li);
+                }
+            });
+        }
+        
+        function switchToRepo(repoName) {
+            currentRepo = repoName;
+            currentPage = 1;
+            searchKeyword = '';
+            searchInput.value = '';
+            selectedPackages.clear();
+            updateBatchDeleteButton();
+            selectAllCheckbox.checked = false;
+            repoSelect.value = repoName;
+            
+            // 保存当前页面状态到localStorage
+            localStorage.setItem('currentPage', 'repo');
+            localStorage.setItem('currentRepo', repoName);
+            
+            // 显示所有相关页面元素
+            const elementsToShow = [
+                '.page-header',
+                '.dashboard-cards',
+                '.repo-management',
+                '.repo-info',
+                '.upload-section',
+                '.packages-section'
+            ];
+            
+            elementsToShow.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.style.display = 'block';
+                }
+            });
+            
+            // 隐藏镜像同步部分
+            const mirrorSyncSection = document.getElementById('mirrorSyncSection');
+            if (mirrorSyncSection) {
+                mirrorSyncSection.style.display = 'none';
+            }
+            
+            // 加载数据
+            loadPackages(currentPage);
+            updateRepoList();
+            updateSidebarNavigation();
+            updateRepoInfo();
+            updateDashboard();
+        }
+        
+        function updateRepoList() {
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        repoList.innerHTML = '<h4 style="margin-bottom: var(--spacing-md); font-weight: 600; color: var(--text-primary);">仓库列表</h4>';
+                        data.repositories.forEach(repo => {
+                            const repoItem = document.createElement('div');
+                            repoItem.className = `repo-item ${repo.name === currentRepo ? 'active' : ''}`;
+                            repoItem.innerHTML = `
+                                <span class="repo-name">
+                                    ${repo.name}
+                                    ${repo.name === 'default' ? '<span class="repo-badge">默认</span>' : ''}
+                                </span>
+                                <button class="btn btn-danger" onclick="deleteRepository('${repo.name}')" ${repo.name === 'default' ? 'disabled' : ''} aria-label="删除仓库">
+                                    删除
+                                </button>
+                            `;
+                            repoList.appendChild(repoItem);
+                        });
+                    }
+                });
+        }
+        
+        function createRepository() {
+            const newRepoName = document.getElementById('newRepoName').value.trim();
+            const newRepoCodename = document.getElementById('newRepoCodename').value.trim();
+            
+            if (!newRepoName) {
+                showStatus('请输入仓库名称', 'error');
+                return;
+            }
+            
+            const codename = newRepoCodename || 'focal'; // 默认codename为focal
+            
+            showLoading();
+            showStatus(`正在创建仓库: ${newRepoName} (codename: ${codename})...`, '');
+            
+            fetch('/repos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: newRepoName, codename: codename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showStatus(`仓库 ${newRepoName} 创建成功`, 'success');
+                    document.getElementById('newRepoName').value = '';
+                    loadRepositories();
+                    updateRepoInfo();
+                } else {
+                    showStatus(`创建仓库失败: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`创建仓库失败: ${error.message}`, 'error');
+            });
+        }
+        
+        function deleteRepository(repoName) {
+            if (!confirm(`确定要删除仓库 ${repoName} 吗？此操作无法撤销，该仓库中的所有包都将被删除。`)) {
+                return;
+            }
+            
+            showLoading();
+            showStatus(`正在删除仓库: ${repoName}...`, '');
+            
+            fetch(`/repos/${repoName}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showStatus(`仓库 ${repoName} 删除成功`, 'success');
+                    if (repoName === currentRepo) {
+                        currentRepo = 'default';
+                        currentPage = 1;
+                        searchKeyword = '';
+                        searchInput.value = '';
+                        selectedPackages.clear();
+                        updateBatchDeleteButton();
+                        selectAllCheckbox.checked = false;
+                        repoSelect.value = 'default';
+                    }
+                    loadRepositories();
+                    loadPackages(currentPage);
+                } else {
+                    showStatus(`删除仓库失败: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`删除仓库失败: ${error.message}`, 'error');
+            });
+        }
+        
+        function showStatus(message, type = '') {
+            status.textContent = message;
+            status.className = 'status' + (type ? ' ' + type : '');
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showMessage(message, type = '') {
+            status.textContent = message;
+            status.className = 'status' + (type ? ' ' + type : '');
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('debFiles', files[i]);
+            }
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressItems = document.getElementById('progressItems');
+            progressItems.innerHTML = '';
+            progressContainer.style.display = 'block';
+
+            const progressElements = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const progressElement = createProgressElement(file.name);
+                progressItems.appendChild(progressElement);
+                progressElements.push({
+                    element: progressElement,
+                    percentage: progressElement.querySelector('.progress-percentage'),
+                    bar: progressElement.querySelector('.progress-bar')
+                });
+            }
+
+            formData.append('repo', currentRepo);
+            
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    progressElements.forEach(({ percentage, bar }) => {
+                        percentage.textContent = `${percentComplete}%`;
+                        bar.style.width = `${percentComplete}%`;
+                    });
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        const successCount = data.results.filter(r => r.success).length;
+                        const failCount = data.results.filter(r => !r.success).length;
+                        
+                        let message = `成功上传 ${successCount} 个文件到仓库 ${currentRepo}`;
+                        if (failCount > 0) {
+                            message += `，失败 ${failCount} 个文件`;
+                        }
+                        
+                        showStatus(message, 'success');
+                        
+                        // 更新最后上传时间
+                        const now = new Date();
+                        lastUploadTime = now.toLocaleString();
+                        updateDashboard();
+                        
+                        data.results.forEach((result, index) => {
+                            const { percentage, bar } = progressElements[index];
+                            if (result.success) {
+                                percentage.textContent = '100%';
+                                percentage.className = 'progress-percentage completed';
+                                bar.style.width = '100%';
+                                bar.className = 'progress-bar completed';
+                            } else {
+                                percentage.textContent = '失败';
+                                percentage.className = 'progress-percentage failed';
+                                bar.className = 'progress-bar failed';
+                            }
+                        });
+                        
+                        loadPackages(currentPage);
+                    } else {
+                        showStatus(`错误: ${data.error}`, 'error');
+                        
+                        progressElements.forEach(({ percentage, bar }) => {
+                            percentage.textContent = '失败';
+                            percentage.className = 'progress-percentage failed';
+                            bar.className = 'progress-bar failed';
+                        });
+                    }
+                } catch (error) {
+                    showStatus(`解析响应失败: ${error.message}`, 'error');
+                    
+                    progressElements.forEach(({ percentage, bar }) => {
+                        percentage.textContent = '失败';
+                        percentage.className = 'progress-percentage failed';
+                        bar.className = 'progress-bar failed';
+                    });
+                }
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 5000);
+            });
+
+            xhr.addEventListener('error', () => {
+                showStatus('上传失败: 网络错误', 'error');
+                
+                progressElements.forEach(({ percentage, bar }) => {
+                    percentage.textContent = '失败';
+                    percentage.className = 'progress-percentage failed';
+                    bar.className = 'progress-bar failed';
+                });
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 5000);
+            });
+
+            xhr.open('POST', '/upload');
+            xhr.send(formData);
+
+            event.target.value = '';
+        }
+
+        function createProgressElement(filename) {
+            const div = document.createElement('div');
+            div.className = 'progress-item';
+            div.innerHTML = `
+                <div class="progress-header-row">
+                    <span class="progress-filename">${filename}</span>
+                    <span class="progress-percentage">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+            `;
+            return div;
+        }
+
+        function loadPackages(page = 1) {
+            showLoading();
+            fetch(`/packages?page=${page}&limit=10&repo=${currentRepo}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    packagesTable.innerHTML = '';
+                    selectedPackages.clear();
+                    updateBatchDeleteButton();
+                    selectAllCheckbox.checked = false;
+                    
+                    if (data.packages && data.packages.length > 0) {
+                        let filteredPackages = data.packages;
+                        if (searchKeyword) {
+                            filteredPackages = data.packages.filter(pkg => 
+                                pkg.package.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                                pkg.version.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                                pkg.architecture.toLowerCase().includes(searchKeyword.toLowerCase())
+                            );
+                        }
+                        
+                        if (filteredPackages.length > 0) {
+                            filteredPackages.forEach(pkg => {
+                                const row = packagesTable.insertRow();
+                                row.setAttribute('data-package', pkg.package);
+                                row.setAttribute('data-architecture', pkg.architecture);
+                                
+                                const checkboxCell = row.insertCell(0);
+                                checkboxCell.className = 'checkbox-cell';
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.className = 'package-checkbox';
+                                checkbox.onchange = () => togglePackageSelection(pkg.package, pkg.architecture, checkbox.checked);
+                                checkbox.setAttribute('aria-label', `选择包 ${pkg.package}`);
+                                checkboxCell.appendChild(checkbox);
+                                
+                                row.insertCell(1).textContent = pkg.package;
+                                row.insertCell(2).textContent = pkg.version;
+                                row.insertCell(3).textContent = pkg.architecture;
+                                
+                                const actionCell = row.insertCell(4);
+                                const deleteBtn = document.createElement('button');
+                                deleteBtn.textContent = '删除';
+                                deleteBtn.className = 'btn btn-danger';
+                                deleteBtn.onclick = () => deletePackage(pkg.package, pkg.architecture);
+                                deleteBtn.setAttribute('aria-label', `删除包 ${pkg.package}`);
+                                actionCell.appendChild(deleteBtn);
+                            });
+                            
+                            currentPage = data.pagination.page;
+                            totalPages = data.pagination.totalPages;
+                            
+                            document.getElementById('pageInfo').textContent = `第 ${currentPage} 页，共 ${totalPages} 页 (仓库: ${currentRepo}${searchKeyword ? `, 搜索: "${searchKeyword}"` : ''})`;
+                            document.getElementById('prevPage').disabled = currentPage === 1;
+                            document.getElementById('nextPage').disabled = currentPage === totalPages;
+                        } else {
+                            const row = packagesTable.insertRow();
+                            row.insertCell(0).textContent = `没有找到匹配"${searchKeyword}"的包`;
+                            row.cells[0].colSpan = 5;
+                            row.cells[0].style.textAlign = 'center';
+                            row.cells[0].style.color = 'var(--text-secondary)';
+                            
+                            document.getElementById('pageInfo').textContent = `第 1 页，共 1 页 (仓库: ${currentRepo})`;
+                            document.getElementById('prevPage').disabled = true;
+                            document.getElementById('nextPage').disabled = true;
+                        }
+                    } else {
+                        const row = packagesTable.insertRow();
+                        row.insertCell(0).textContent = `仓库 ${currentRepo} 中暂无包`;
+                        row.cells[0].colSpan = 5;
+                        row.cells[0].style.textAlign = 'center';
+                        row.cells[0].style.color = 'var(--text-secondary)';
+                        
+                        document.getElementById('pageInfo').textContent = `第 1 页，共 1 页 (仓库: ${currentRepo})`;
+                        document.getElementById('prevPage').disabled = true;
+                        document.getElementById('nextPage').disabled = true;
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    packagesTable.innerHTML = '';
+                    const row = packagesTable.insertRow();
+                    row.insertCell(0).textContent = `加载失败: ${error.message}`;
+                    row.cells[0].colSpan = 5;
+                    row.cells[0].style.textAlign = 'center';
+                    row.cells[0].style.color = 'var(--error-color)';
+                });
+        }
+
+        function deletePackage(packageName, architecture) {
+            if (!confirm(`确定要删除仓库 ${currentRepo} 中的包 ${packageName} (${architecture}) 吗？此操作无法撤销。`)) {
+                return;
+            }
+
+            showLoading();
+            showStatus(`正在删除仓库 ${currentRepo} 中的包 ${packageName}...`, '');
+
+            fetch(`/packages/${packageName}?architecture=${architecture}&repo=${currentRepo}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showStatus(`成功删除仓库 ${currentRepo} 中的包 ${packageName}`, 'success');
+                    const key = `${packageName}-${architecture}`;
+                    selectedPackages.delete(key);
+                    updateBatchDeleteButton();
+                    updateSelectAllCheckbox();
+                    loadPackages(currentPage);
+                } else {
+                    showStatus(`删除失败: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`删除失败: ${error.message}`, 'error');
+            });
+        }
+
+        function togglePackageSelection(packageName, architecture, isChecked) {
+            const key = `${packageName}-${architecture}`;
+            if (isChecked) {
+                selectedPackages.add(key);
+            } else {
+                selectedPackages.delete(key);
+            }
+            updateBatchDeleteButton();
+            updateSelectAllCheckbox();
+        }
+
+        function toggleSelectAll(checkbox) {
+            const checkboxes = packagesTable.querySelectorAll('.package-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+                const row = cb.closest('tr');
+                const packageName = row.getAttribute('data-package');
+                const architecture = row.getAttribute('data-architecture');
+                togglePackageSelection(packageName, architecture, checkbox.checked);
+            });
+        }
+
+        function updateSelectAllCheckbox() {
+            const checkboxes = packagesTable.querySelectorAll('.package-checkbox');
+            const total = checkboxes.length;
+            const checked = packagesTable.querySelectorAll('.package-checkbox:checked').length;
+            selectAllCheckbox.checked = total > 0 && checked === total;
+        }
+
+        function updateBatchDeleteButton() {
+            batchDeleteBtn.disabled = selectedPackages.size === 0;
+            if (selectedPackages.size > 0) {
+                batchDeleteBtn.textContent = `批量删除 (${selectedPackages.size})`;
+            } else {
+                batchDeleteBtn.textContent = '批量删除';
+            }
+        }
+
+        function updateRepoInfo() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.host;
+            const baseUrl = `${protocol}//${hostname}`;
+            const repoUrl = `${baseUrl}/repo/${currentRepo}`;
+            
+            // 获取仓库信息
+            fetch(`/repos/${currentRepo}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const codename = data.repository.codename;
+                        const repoUrlInfo = document.getElementById('repoUrlInfo');
+                        repoUrlInfo.innerHTML = `
+<div class="flex items-center justify-between mb-2">
+    <span>HTTP访问:</span>
+    <div class="flex items-center gap-2">
+        <a href="${repoUrl}" target="_blank" class="text-blue-600 hover:underline font-medium">${repoUrl}</a>
+        <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100" onclick="copyToClipboard('${repoUrl}')" aria-label="复制地址">
+            <span>📋</span>
+        </button>
+    </div>
+</div>
+<div>文件目录: /app/repos/${currentRepo} (容器内)</div>
+<div>数据持久化: ./repos/${currentRepo} (宿主机)</div>
+<div>Codename: ${codename}</div>
+`;
+                        
+                        const clientUsageInfo = document.getElementById('clientUsageInfo');
+                        clientUsageInfo.textContent = `# 添加仓库源（无需导入公钥）
+echo "deb [trusted=yes] ${repoUrl} ${codename} main" | sudo tee -a /etc/apt/sources.list
+
+# 更新包列表
+sudo apt update
+
+# 安装包
+sudo apt install package-name`;
+                        
+                        // 更新codename信息显示
+                        const codenameInfo = document.querySelector('.info-grid .info-item:nth-child(1) .info-value');
+                        if (codenameInfo) {
+                            codenameInfo.textContent = codename;
+                        }
+                        
+
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to get repository info:', error);
+                    // 失败时使用默认值
+                    const repoUrlInfo = document.getElementById('repoUrlInfo');
+                    repoUrlInfo.textContent = `HTTP访问: ${repoUrl}
+文件目录: /app/repos/${currentRepo} (容器内)
+数据持久化: ./repos/${currentRepo} (宿主机)
+Codename: focal`;
+                    
+                    const clientUsageInfo = document.getElementById('clientUsageInfo');
+                    clientUsageInfo.textContent = `# 添加仓库源（无需导入公钥）
+echo "deb [trusted=yes] ${repoUrl} focal main" | sudo tee -a /etc/apt/sources.list
+
+# 更新包列表
+sudo apt update
+
+# 安装包
+sudo apt install package-name`;
+                });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                searchInput.value = '';
+                searchKeyword = '';
+                currentPage = 1;
+                selectedPackages.clear();
+                updateBatchDeleteButton();
+                selectAllCheckbox.checked = false;
+                loadPackages(currentPage);
+            }
+        });
+
+        // 复制到剪贴板功能
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showMessage('地址已复制到剪贴板！', 'success');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    showMessage('复制失败，请手动复制', 'error');
+                });
+        }
+
+        // 更新镜像统计卡片
+        function updateMirrorStats(configCount) {
+            const configCountEl = document.getElementById('mirrorConfigCount');
+            const configTotalEl = document.getElementById('mirrorConfigTotal');
+            
+            if (configCountEl) {
+                configCountEl.textContent = configCount;
+            }
+            if (configTotalEl) {
+                configTotalEl.textContent = configCount;
+            }
+        }
+
+        // 镜像同步功能
+        function switchToMirrors() {
+            // 保存当前页面状态到localStorage
+            localStorage.setItem('currentPage', 'mirror');
+            
+            // 隐藏其他部分
+            const elementsToHide = [
+                '.page-header',
+                '.dashboard-cards',
+                '.repo-management',
+                '.repo-info',
+                '.upload-section',
+                '.packages-section'
+            ];
+            
+            elementsToHide.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.style.display = 'none';
+                }
+            });
+            
+            // 显示镜像同步部分
+            const mirrorSyncSection = document.getElementById('mirrorSyncSection');
+            if (mirrorSyncSection) {
+                mirrorSyncSection.style.display = 'block';
+            }
+            
+            // 加载镜像配置列表
+            loadMirrorConfigs();
+            
+            // 加载保存的表单数据
+            loadMirrorFormData();
+        }
+
+        function loadMirrorConfigs() {
+            fetch('/mirrors')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 更新统计卡片
+                        updateMirrorStats(data.mirrors.length);
+                        
+                        // 检查正在运行的任务
+                        fetch('/mirrors/tasks')
+                            .then(response => response.json())
+                            .then(taskData => {
+                                if (taskData.success) {
+                                    const runningTasks = taskData.tasks.filter(task => task.status === 'running');
+                                    const runningCount = runningTasks.length;
+                                    const completedTasks = taskData.tasks.filter(task => task.status === 'completed');
+                                    const completedCount = completedTasks.length;
+                                    const failedTasks = taskData.tasks.filter(task => task.status === 'failed');
+                                    const failedCount = failedTasks.length;
+                                    
+                                    // 更新统计卡片
+                                    const runningEl = document.getElementById('mirrorSyncRunning');
+                                    const successEl = document.getElementById('mirrorSyncSuccess');
+                                    const failedEl = document.getElementById('mirrorSyncFailed');
+                                    
+                                    if (runningEl) runningEl.textContent = runningCount;
+                                    if (successEl) successEl.textContent = completedCount;
+                                    if (failedEl) failedEl.textContent = failedCount;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Failed to get tasks:', error);
+                            });
+                        
+                        const configList = document.getElementById('mirrorConfigList');
+                        configList.innerHTML = '';
+                        
+                        if (data.mirrors.length === 0) {
+                            configList.innerHTML = `
+                                <div class="text-center py-16 text-gray-500">
+                                    <div class="text-5xl mb-4">🔄</div>
+                                    <h4 class="text-lg font-medium mb-2">暂无镜像配置</h4>
+                                    <p class="text-sm">点击上方的「创建配置」按钮添加新的镜像同步配置</p>
+                                </div>
+                            `;
+                        } else {
+                            data.mirrors.forEach(config => {
+                                const configItem = document.createElement('div');
+                                configItem.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-lg transform hover:translate-y-[-2px] hover:border-blue-200';
+                                configItem.innerHTML = `
+                                    <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-4 mb-4">
+                                                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-2xl shadow-md">
+                                                    🔄
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-semibold text-lg text-gray-900">${config.name}</h4>
+                                                    <p class="text-sm text-gray-600 truncate max-w-md">${config.url}</p>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>🏷️</span>
+                                                        Codename
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium">${config.codename}</span>
+                                                </div>
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>📦</span>
+                                                        Components
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium">${config.components.join(' ')}</span>
+                                                </div>
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>📊</span>
+                                                        Bandwidth
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium">${config.bandwidth || 'Unlimited'}</span>
+                                                </div>
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50 md:col-span-2 lg:col-span-3">
+                                                    <span class="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                                        <span>📁</span>
+                                                        Sync Path
+                                                    </span>
+                                                    <span class="text-gray-900 font-medium truncate">${config.syncPath}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-3 min-w-[130px]">
+                                            <button class="btn bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" onclick="runMirrorSync('${config.name}')">
+                                                <span>🔄</span>
+                                                <span>同步</span>
+                                            </button>
+                                            <button class="btn bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" onclick="manageTasks('${config.name}')">
+                                                <span>📅</span>
+                                                <span>任务</span>
+                                            </button>
+                                            <button class="btn bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2" onclick="viewMirrorLogs('${config.name}')">
+                                                <span>📋</span>
+                                                <span>日志</span>
+                                            </button>
+                                            <button class="btn bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2.5 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2" onclick="deleteMirrorConfig('${config.name}')">
+                                                <span>🗑️</span>
+                                                <span>删除</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                configList.appendChild(configItem);
+                            });
+                        }
+                    } else {
+                        const configList = document.getElementById('mirrorConfigList');
+                        configList.innerHTML = `
+                            <div class="text-center py-12 text-gray-500">
+                                <div class="text-5xl mb-4">❌</div>
+                                <h4 class="text-lg font-medium mb-2">加载配置失败</h4>
+                                <p class="text-sm">请稍后重试</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load mirror configs:', error);
+                    const configList = document.getElementById('mirrorConfigList');
+                    configList.innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <div class="text-5xl mb-4">❌</div>
+                            <h4 class="text-lg font-medium mb-2">加载配置失败</h4>
+                            <p class="text-sm">请检查网络连接后重试</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // 同步任务状态管理
+        let currentSyncTaskId = localStorage.getItem('currentSyncTaskId') || null;
+        let syncProgressInterval = null;
+        let isSyncProgressHidden = false;
+        
+        // 显示同步进度条
+        function showSyncProgress() {
+            // 重置隐藏标志
+            isSyncProgressHidden = false;
+            
+            const progressContainer = document.createElement('div');
+            progressContainer.id = 'syncProgressContainer';
+            progressContainer.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm';
+            progressContainer.style.position = 'fixed';
+            progressContainer.style.top = '0';
+            progressContainer.style.left = '0';
+            progressContainer.style.right = '0';
+            progressContainer.style.bottom = '0';
+            progressContainer.style.display = 'flex';
+            progressContainer.style.alignItems = 'center';
+            progressContainer.style.justifyContent = 'center';
+            progressContainer.style.zIndex = '9999';
+            progressContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            progressContainer.style.backdropFilter = 'blur(4px)';
+            progressContainer.style.animation = 'fadeIn 0.3s ease-out';
+            progressContainer.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all duration-500 scale-100">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                                <span class="text-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-2 rounded-xl shadow-lg">🔄</span>
+                                同步进度
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-2" id="syncTaskInfo">任务ID: <span id="syncTaskId" class="font-mono bg-gray-100 px-2 py-1 rounded text-blue-600">--</span></p>
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 transition-all duration-200 p-3 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transform hover:scale-110 shadow-md" onclick="cancelSync()" aria-label="关闭同步进度">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-sm font-medium text-gray-700">同步状态</span>
+                            <span class="text-sm font-semibold text-blue-600" id="syncProgressPercentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-4 overflow-hidden shadow-sm">
+                            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 h-4 rounded-full transition-all duration-500 ease-out" id="syncProgressBar" style="width: 0%">
+                                <div class="h-full w-full bg-gradient-to-r from-blue-400 to-indigo-500 animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-sm font-medium text-gray-700 mb-6" id="syncStatusText">准备开始同步...</div>
+                    <div class="flex items-center justify-between mb-6 text-xs text-gray-600 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <span id="syncDownloadInfo">正在计算下载大小...</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-4 text-xs text-gray-500 mb-4">
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-600 rounded-full shadow-sm"></div>
+                            <span>准备</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
+                            <span>索引</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-400 rounded-full shadow-sm"></div>
+                            <span>包文件</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-blue-300 rounded-full shadow-sm"></div>
+                            <span>整理</span>
+                        </div>
+                        <div class="h-1 w-4 bg-gray-200 rounded"></div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-4 h-4 bg-green-500 rounded-full shadow-sm"></div>
+                            <span>完成</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-3 mb-4">
+                        <button id="pauseSyncBtn" class="btn bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2" onclick="pauseSync()">
+                            <span>⏸️</span>
+                            <span>暂停</span>
+                        </button>
+                        <button id="resumeSyncBtn" class="btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" onclick="resumeSync()" style="display: none;">
+                            <span>▶️</span>
+                            <span>继续</span>
+                        </button>
+                    </div>
+                    <div class="mt-4 text-center text-xs text-gray-400">
+                        <p>请勿关闭浏览器窗口，同步正在进行中...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(progressContainer);
+            
+            // 立即获取任务状态并更新进度条
+            if (currentSyncTaskId) {
+                fetch(`/mirrors/tasks/${currentSyncTaskId}`)
+                    .then(response => response.json())
+                    .then(taskData => {
+                        if (taskData.success) {
+                            const task = taskData.task;
+                            updateSyncProgress(
+                                task.progress,
+                                task.status,
+                                task.error,
+                                task.totalSize,
+                                task.downloadedSize
+                            );
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to get task status:', err);
+                    });
+            }
+        }
+        
+        // 更新同步进度
+        function updateSyncProgress(progress, status, error, totalSize, downloadedSize) {
+            // 如果同步进度窗口已被隐藏，直接返回
+            if (isSyncProgressHidden) {
+                return;
+            }
+            
+            const progressBar = document.getElementById('syncProgressBar');
+            const progressPercentage = document.getElementById('syncProgressPercentage');
+            const statusText = document.getElementById('syncStatusText');
+            const syncTaskIdElement = document.getElementById('syncTaskId');
+            const syncDownloadInfo = document.getElementById('syncDownloadInfo');
+            
+            // 更新任务ID
+            if (syncTaskIdElement && currentSyncTaskId) {
+                syncTaskIdElement.textContent = currentSyncTaskId;
+            }
+            
+            // 更新下载信息
+            if (syncDownloadInfo) {
+                if (totalSize > 0) {
+                    const downloaded = downloadedSize || 0;
+                    const remaining = totalSize - downloaded;
+                    syncDownloadInfo.textContent = `已下载: ${downloaded.toFixed(2)} GiB / 总大小: ${totalSize.toFixed(2)} GiB / 剩余: ${remaining.toFixed(2)} GiB`;
+                } else {
+                    syncDownloadInfo.textContent = '正在计算下载大小...';
+                }
+            }
+            
+            if (progressBar && progressPercentage) {
+                // 计算实际进度百分比（从30-95%映射回0-100%）
+                const actualProgress = totalSize > 0 && downloadedSize > 0 ? (downloadedSize / totalSize) * 100 : 0;
+                const displayProgress = Math.min(actualProgress, 100);
+                
+                // 平滑更新进度条
+                progressBar.style.width = `${displayProgress}%`;
+                progressPercentage.textContent = `${Math.round(displayProgress)}%`;
+                
+                // 根据进度改变状态文本
+                let statusMessage = '';
+                if (displayProgress < 5) {
+                    statusMessage = '准备开始同步...';
+                } else if (displayProgress < 20) {
+                    statusMessage = '正在下载索引文件...';
+                } else if (displayProgress < 90) {
+                    statusMessage = '正在下载包文件...';
+                } else if (displayProgress < 100) {
+                    statusMessage = '正在清理和整理...';
+                } else {
+                    statusMessage = '同步完成！';
+                }
+                
+                // 根据任务状态更新状态文本
+                switch (status) {
+                    case 'running':
+                        if (statusText) {
+                            statusText.textContent = statusMessage;
+                        }
+                        // 更新按钮状态
+                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'flex';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'none';
+                        }
+                        break;
+                    case 'paused':
+                        if (statusText) {
+                            statusText.textContent = '同步已暂停';
+                            statusText.classList.add('text-yellow-600');
+                            statusText.classList.add('font-medium');
+                        }
+                        // 更新按钮状态
+                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'none';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'flex';
+                        }
+                        break;
+                    case 'completed':
+                        if (statusText) {
+                            statusText.textContent = '同步完成！';
+                            statusText.classList.add('text-green-600');
+                            statusText.classList.add('font-medium');
+                        }
+                        if (progressBar) {
+                            progressBar.classList.add('bg-green-600');
+                            progressBar.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700');
+                        }
+                        if (syncDownloadInfo && totalSize > 0) {
+                            syncDownloadInfo.textContent = `已完成: ${totalSize.toFixed(2)} GiB`;
+                        }
+                        // 隐藏控制按钮
+                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'none';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'none';
+                        }
+                        break;
+                    case 'failed':
+                        if (statusText) {
+                            statusText.textContent = `同步失败: ${error || '未知错误'}`;
+                            statusText.classList.add('text-red-600');
+                            statusText.classList.add('font-medium');
+                        }
+                        if (progressBar) {
+                            progressBar.classList.add('bg-red-600');
+                            progressBar.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700');
+                        }
+                        // 隐藏控制按钮
+                        if (document.getElementById('pauseSyncBtn')) {
+                            document.getElementById('pauseSyncBtn').style.display = 'none';
+                        }
+                        if (document.getElementById('resumeSyncBtn')) {
+                            document.getElementById('resumeSyncBtn').style.display = 'none';
+                        }
+                        break;
+                }
+            }
+        }
+        
+        // 隐藏同步进度条
+        function hideSyncProgress() {
+            // 先清除轮询，防止干扰关闭过程
+            if (syncProgressInterval) {
+                clearInterval(syncProgressInterval);
+                syncProgressInterval = null;
+            }
+            
+            // 设置标志，防止轮询请求返回后再次更新进度
+            isSyncProgressHidden = true;
+            
+            const progressContainer = document.getElementById('syncProgressContainer');
+            if (progressContainer) {
+                // 添加关闭动画
+                const progressCard = progressContainer.querySelector('div');
+                if (progressCard) {
+                    progressCard.classList.remove('scale-100');
+                    progressCard.classList.add('scale-95', 'opacity-0');
+                }
+                
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    progressContainer.remove();
+                }, 300);
+            }
+            
+            currentSyncTaskId = null;
+            localStorage.removeItem('currentSyncTaskId');
+        }
+        
+        // 取消同步
+        function cancelSync() {
+            hideSyncProgress();
+        }
+        
+        // 暂停同步
+        function pauseSync() {
+            if (currentSyncTaskId) {
+                fetch(`/mirrors/tasks/${currentSyncTaskId}/pause`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('同步已暂停', 'success');
+                        // 更新按钮状态
+                        document.getElementById('pauseSyncBtn').style.display = 'none';
+                        document.getElementById('resumeSyncBtn').style.display = 'flex';
+                    } else {
+                        showMessage(`暂停失败: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to pause sync:', error);
+                    showMessage('暂停失败，请稍后重试', 'error');
+                });
+            }
+        }
+        
+        // 恢复同步
+        function resumeSync() {
+            if (currentSyncTaskId) {
+                fetch(`/mirrors/tasks/${currentSyncTaskId}/resume`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('同步已恢复', 'success');
+                        // 更新按钮状态
+                        document.getElementById('resumeSyncBtn').style.display = 'none';
+                        document.getElementById('pauseSyncBtn').style.display = 'flex';
+                    } else {
+                        showMessage(`恢复失败: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to resume sync:', error);
+                    showMessage('恢复失败，请稍后重试', 'error');
+                });
+            }
+        }
+        
+        // 轮询同步任务状态
+        function pollSyncTaskStatus(taskId) {
+            // 立即执行一次轮询，确保进度条立即更新
+            function fetchTaskStatus() {
+                if (isSyncProgressHidden) return;
+                
+                fetch(`/mirrors/tasks/${taskId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const task = data.task;
+                            updateSyncProgress(task.progress, task.status, task.error, task.totalSize, task.downloadedSize);
+                            
+                            if (task.status === 'completed' || task.status === 'failed') {
+                                setTimeout(hideSyncProgress, 1500);
+                                
+                                if (task.status === 'completed') {
+                                    showMessage('同步成功！', 'success');
+                                    loadMirrorConfigs();
+                                    // 重新加载仓库列表，确保同步的仓库在菜单栏中显示
+                                    loadRepositories();
+                                } else {
+                                    showMessage('同步失败: ' + (task.error || '未知错误'), 'error');
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Failed to get task status:', error);
+                        // 不立即停止轮询，继续尝试
+                        showMessage('获取同步状态失败: ' + error.message, 'error');
+                    });
+            }
+            
+            // 立即执行一次
+            fetchTaskStatus();
+            
+            // 设置轮询
+            syncProgressInterval = setInterval(fetchTaskStatus, 1000); // 轮询间隔设为1秒，确保实时刷新
+        }
+        
+        function runMirrorSync(configName) {
+            if (confirm(`确定要同步 ${configName} 吗？`)) {
+                showSyncProgress();
+                
+                // 立即开始轮询任务状态，使用临时任务ID
+                let tempTaskId = 'temp-' + Date.now();
+                currentSyncTaskId = tempTaskId;
+                
+                // 立即执行一次轮询，显示正在启动同步任务
+                function fetchInitialStatus() {
+                    if (isSyncProgressHidden) return;
+                    
+                    // 更新进度条显示
+                    const progressBar = document.getElementById('syncProgressBar');
+                    const progressPercentage = document.getElementById('syncProgressPercentage');
+                    const statusText = document.getElementById('syncStatusText');
+                    const syncTaskIdElement = document.getElementById('syncTaskId');
+                    const syncDownloadInfo = document.getElementById('syncDownloadInfo');
+                    
+                    if (progressBar) progressBar.style.width = '0%';
+                    if (progressPercentage) progressPercentage.textContent = '0%';
+                    if (statusText) statusText.textContent = '正在启动同步任务...';
+                    if (syncTaskIdElement) syncTaskIdElement.textContent = '启动中...';
+                    if (syncDownloadInfo) syncDownloadInfo.textContent = '正在准备同步配置...';
+                }
+                
+                // 立即执行一次初始状态更新
+                fetchInitialStatus();
+                
+                // 启动同步任务
+                fetch(`/mirrors/${configName}/sync`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.taskId) {
+                        currentSyncTaskId = data.taskId;
+                        localStorage.setItem('currentSyncTaskId', currentSyncTaskId);
+                        // 开始正式轮询任务状态
+                        pollSyncTaskStatus(data.taskId);
+                    } else {
+                        hideSyncProgress();
+                        if (data.success) {
+                            showMessage('同步成功！', 'success');
+                            loadMirrorConfigs();
+                            // 重新加载仓库列表，确保同步的仓库在菜单栏中显示
+                            loadRepositories();
+                        } else {
+                            showMessage('同步失败: ' + data.error, 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    hideSyncProgress();
+                    showMessage('同步失败: ' + error.message, 'error');
+                });
+            }
+        }
+
+        function viewMirrorLogs(configName) {
+            fetch(`/mirrors/${configName}/logs`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.logs.length > 0) {
+                        const latestLog = data.logs[0];
+                        fetch(`/mirrors/${configName}/logs/${latestLog.filename}`)
+                            .then(response => response.json())
+                            .then(logData => {
+                                if (logData.success) {
+                                    const logContent = logData.content;
+                                    const logWindow = window.open('', '_blank', 'width=800,height=600');
+                                    logWindow.document.write(`
+                                        <html>
+                                            <head>
+                                                <title>同步日志 - ${configName}</title>
+                                                <style>
+                                                    body { font-family: monospace; padding: 20px; }
+                                                    pre { white-space: pre-wrap; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <h1>同步日志 - ${configName}</h1>
+                                                <h2>${latestLog.filename}</h2>
+                                                <pre>${logContent}</pre>
+                                            </body>
+                                        </html>
+                                    `);
+                                }
+                            });
+                    } else {
+                        showMessage('没有找到日志文件', 'info');
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load mirror logs:', error);
+                });
+        }
+
+        function deleteMirrorConfig(configName) {
+            if (confirm(`确定要删除 ${configName} 吗？`)) {
+                fetch(`/mirrors/${configName}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('删除成功！', 'success');
+                        loadMirrorConfigs();
+                    } else {
+                        showMessage('删除失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('删除失败: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // 任务管理功能
+        let currentConfigName = '';
+
+        function manageTasks(configName) {
+            currentConfigName = configName;
+            document.getElementById('taskModalTitle').textContent = `${configName} 任务管理`;
+            document.getElementById('taskModal').classList.remove('hidden');
+            loadTaskList(configName);
+        }
+
+        function closeTaskModal() {
+            const taskModal = document.getElementById('taskModal');
+            const taskModalContent = document.getElementById('taskModalContent');
+            
+            // 应用关闭动画
+            taskModalContent.classList.remove('scale-100', 'opacity-100');
+            taskModalContent.classList.add('scale-95', 'opacity-0');
+            
+            // 动画结束后隐藏模态框
+            setTimeout(() => {
+                taskModal.classList.add('hidden');
+                currentConfigName = '';
+            }, 300);
+        }
+
+        function loadTaskList(configName) {
+            fetch(`/mirrors/${configName}/tasks`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const taskListContainer = document.getElementById('taskListContainer');
+                        const taskCountElement = document.getElementById('taskCount');
+                        
+                        taskCountElement.textContent = `${data.tasks.length} 个任务`;
+                        taskListContainer.innerHTML = '';
+
+                        if (data.tasks.length === 0) {
+                            taskListContainer.innerHTML = `
+                                <div class="text-center py-12 text-gray-500">
+                                    <div class="text-4xl mb-4">📅</div>
+                                    <p class="text-lg font-medium">暂无同步任务</p>
+                                    <p class="text-sm mt-2">点击下方的「创建任务」按钮添加新任务</p>
+                                </div>
+                            `;
+                        } else {
+                            data.tasks.forEach(task => {
+                                const taskItem = document.createElement('div');
+                                taskItem.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-300 transform hover:translate-y-[-2px] hover:border-blue-200';
+                                taskItem.innerHTML = `
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-4 mb-3">
+                                                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                                                    <span class="text-xl">⏰</span>
+                                                </div>
+                                                <div>
+                                                    <h5 class="font-semibold text-gray-900 text-lg">${task.name}</h5>
+                                                    <div class="flex items-center gap-2 mt-1">
+                                                        <span class="text-sm text-gray-600">${getScheduleDescription(task.schedule)}</span>
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${task.status === 'running' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                                                            ${task.status === 'running' ? '活跃' : '已停止'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 mt-2">
+                                                <span class="flex items-center gap-1">
+                                                    <span>📅</span>
+                                                    创建时间: ${new Date(task.createdAt).toLocaleString()}
+                                                </span>
+                                                <span class="flex items-center gap-1">
+                                                    <span>🆔</span>
+                                                    ID: ${task.id}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            ${task.status === 'running' ? `
+                                                <button class="text-gray-400 hover:text-yellow-600 transition-colors duration-200 p-2 rounded-full hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2" onclick="stopTask('${configName}', '${task.id}')" aria-label="停止任务">
+                                                    <span class="text-xl">⏸️</span>
+                                                </button>
+                                            ` : `
+                                                <button class="text-gray-400 hover:text-green-600 transition-colors duration-200 p-2 rounded-full hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" onclick="startTask('${configName}', '${task.id}')" aria-label="开始任务">
+                                                    <span class="text-xl">▶️</span>
+                                                </button>
+                                            `}
+                                            <button class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-2 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2" onclick="deleteTask('${configName}', '${task.id}')" aria-label="删除任务">
+                                                <span class="text-xl">🗑️</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                taskListContainer.appendChild(taskItem);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load task list:', error);
+                    const taskListContainer = document.getElementById('taskListContainer');
+                    taskListContainer.innerHTML = `
+                        <div class="text-center py-10 text-gray-500">
+                            <div class="text-4xl mb-3">❌</div>
+                            <p class="text-lg font-medium">加载任务失败</p>
+                            <p class="text-sm mt-2">请稍后重试</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function getScheduleDescription(schedule) {
+            const scheduleMap = {
+                '0 0 * * *': '每天',
+                '0 0 * * 0': '每周',
+                '0 0 1 * *': '每月',
+                '0 */6 * * *': '每6小时',
+                '0 */3 * * *': '每3小时'
+            };
+            return scheduleMap[schedule] || schedule;
+        }
+
+        function deleteTask(configName, taskId) {
+            if (confirm('确定要删除此任务吗？')) {
+                fetch(`/mirrors/${configName}/tasks/${taskId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('任务删除成功！', 'success');
+                        loadTaskList(configName);
+                    } else {
+                        showMessage('删除失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('删除失败: ' + error.message, 'error');
+                });
+            }
+        }
+
+        function startTask(configName, taskId) {
+            fetch(`/mirrors/${configName}/tasks/${taskId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('任务启动成功！', 'success');
+                    loadTaskList(configName);
+                } else {
+                    showMessage('启动失败: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('启动失败: ' + error.message, 'error');
+            });
+        }
+
+        function stopTask(configName, taskId) {
+            fetch(`/mirrors/${configName}/tasks/${taskId}/stop`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('任务停止成功！', 'success');
+                    loadTaskList(configName);
+                } else {
+                    showMessage('停止失败: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('停止失败: ' + error.message, 'error');
+            });
+        }
+
+        // 绑定任务表单提交事件
+        function bindTaskFormSubmit() {
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                // 先移除现有的事件监听器，避免重复绑定
+                const newTaskForm = taskForm.cloneNode(true);
+                taskForm.parentNode.replaceChild(newTaskForm, taskForm);
+                
+                newTaskForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const taskName = document.getElementById('taskName').value;
+                    const scheduleExpression = document.getElementById('scheduleExpression').value;
+                    
+                    if (!currentConfigName) {
+                        showMessage('请先选择配置', 'error');
+                        return;
+                    }
+                    
+                    if (!taskName || !scheduleExpression) {
+                        showMessage('请填写完整的任务信息', 'error');
+                        return;
+                    }
+                    
+                    showLoading('正在创建任务...');
+                    fetch(`/mirrors/${currentConfigName}/tasks`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            taskName,
+                            scheduleExpression
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        hideLoading();
+                        if (data.success) {
+                            showMessage('任务创建成功！', 'success');
+                            loadTaskList(currentConfigName);
+                            // 重置表单
+                            newTaskForm.reset();
+                        } else {
+                            showMessage('创建失败: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        showMessage('创建失败: ' + error.message, 'error');
+                    });
+                });
+            }
+        }
+
+        // 在管理任务时绑定表单提交事件
+        function manageTasks(configName) {
+            currentConfigName = configName;
+            document.getElementById('taskModalTitle').textContent = `${configName} 任务管理`;
+            
+            // 显示模态框
+            const taskModal = document.getElementById('taskModal');
+            const taskModalContent = document.getElementById('taskModalContent');
+            
+            taskModal.classList.remove('hidden');
+            // 触发重排
+            taskModal.offsetHeight;
+            // 应用动画
+            taskModalContent.classList.remove('scale-95', 'opacity-0');
+            taskModalContent.classList.add('scale-100', 'opacity-100');
+            
+            loadTaskList(configName);
+            // 绑定任务表单提交事件
+            bindTaskFormSubmit();
+        }
+
+        function backupMirrorConfigs() {
+            showLoading('正在备份配置...');
+            fetch('/mirrors/backup')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('备份失败');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    hideLoading();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `mirror-configs-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showMessage('备份成功！', 'success');
+                })
+                .catch(error => {
+                    hideLoading();
+                    showMessage('备份失败: ' + error.message, 'error');
+                });
+        }
+
+        function restoreMirrorConfigs() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const backupData = JSON.parse(e.target.result);
+                        showLoading('正在恢复配置...');
+                        fetch('/mirrors/restore', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ backupData })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            hideLoading();
+                            if (data.success) {
+                                showMessage('恢复成功！', 'success');
+                                loadMirrorConfigs();
+                            } else {
+                                showMessage('恢复失败: ' + data.error, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            hideLoading();
+                            showMessage('恢复失败: ' + error.message, 'error');
+                        });
+                    } catch (error) {
+                        showMessage('无效的备份文件', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // 保存镜像配置表单数据到localStorage
+        function saveMirrorFormData() {
+            const formData = {
+                name: document.getElementById('mirrorName').value,
+                url: document.getElementById('mirrorUrl').value,
+                codename: document.getElementById('mirrorCodename').value,
+                components: document.getElementById('mirrorComponents').value,
+                architectures: document.getElementById('mirrorArchitectures').value,
+                bandwidth: document.getElementById('mirrorBandwidth').value,
+                schedule: document.getElementById('mirrorSchedule').value
+            };
+            localStorage.setItem('mirrorFormData', JSON.stringify(formData));
+        }
+        
+        // 从localStorage加载镜像配置表单数据
+        function loadMirrorFormData() {
+            const savedData = localStorage.getItem('mirrorFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                document.getElementById('mirrorName').value = formData.name || '';
+                document.getElementById('mirrorUrl').value = formData.url || '';
+                document.getElementById('mirrorCodename').value = formData.codename || '';
+                document.getElementById('mirrorComponents').value = formData.components || '';
+                document.getElementById('mirrorArchitectures').value = formData.architectures || '';
+                document.getElementById('mirrorBandwidth').value = formData.bandwidth || '';
+                document.getElementById('mirrorSchedule').value = formData.schedule || '';
+            }
+        }
+        
+        // 绑定镜像配置表单输入事件，保存到localStorage
+        const mirrorForm = document.getElementById('mirrorConfigForm');
+        if (mirrorForm) {
+            const formInputs = mirrorForm.querySelectorAll('input, select');
+            formInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    saveMirrorFormData();
+                });
+            });
+        }
+        
+        // 镜像配置表单提交
+        document.getElementById('mirrorConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 验证表单数据
+            const name = document.getElementById('mirrorName').value;
+            const url = document.getElementById('mirrorUrl').value;
+            const codename = document.getElementById('mirrorCodename').value;
+            const components = document.getElementById('mirrorComponents').value.split(' ').filter(Boolean);
+            const architectures = document.getElementById('mirrorArchitectures').value.split(' ').filter(Boolean);
+            
+            // 验证必填字段
+            if (!name) {
+                showMessage('请输入配置名称', 'error');
+                return;
+            }
+            
+            if (!url) {
+                showMessage('请输入仓库源URL', 'error');
+                return;
+            }
+            
+            // 验证URL格式
+            try {
+                new URL(url);
+            } catch (error) {
+                showMessage('请输入有效的URL格式，例如: http://archive.kylinos.cn/', 'error');
+                return;
+            }
+            
+            if (!codename) {
+                showMessage('请输入Codename', 'error');
+                return;
+            }
+            
+            if (components.length === 0) {
+                showMessage('请输入Components', 'error');
+                return;
+            }
+            
+            if (architectures.length === 0) {
+                showMessage('请输入Architectures', 'error');
+                return;
+            }
+            
+            const config = {
+                name: name,
+                url: url,
+                codename: codename,
+                components: components,
+                architectures: architectures,
+                bandwidth: document.getElementById('mirrorBandwidth').value || null,
+                schedule: document.getElementById('mirrorSchedule').value
+            };
+            
+            showLoading('正在创建配置...');
+            fetch('/mirrors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showMessage('配置创建成功！', 'success');
+                    // 清空表单
+                    this.reset();
+                    localStorage.removeItem('mirrorFormData'); // 清空保存的表单数据
+                    // 确保页面保持在镜像同步页面
+                    switchToMirrors();
+                } else {
+                    showMessage('创建失败: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showMessage('创建失败: ' + error.message, 'error');
+            });
+        });
+
+        // 任务管理功能
+        function loadTasks() {
+            // 模拟任务数据
+            const tasks = [
+                {
+                    id: 1,
+                    name: 'ubuntu-focal',
+                    status: 'completed',
+                    startTime: new Date(Date.now() - 3600000),
+                    endTime: new Date(Date.now() - 3000000),
+                    progress: 100
+                },
+                {
+                    id: 2,
+                    name: 'debian-bullseye',
+                    status: 'running',
+                    startTime: new Date(Date.now() - 600000),
+                    progress: 65
+                },
+                {
+                    id: 3,
+                    name: 'ubuntu-jammy',
+                    status: 'failed',
+                    startTime: new Date(Date.now() - 7200000),
+                    endTime: new Date(Date.now() - 7000000),
+                    error: '网络连接超时'
+                }
+            ];
+            
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md transform hover:scale-[1.02]';
+                
+                let statusClass = '';
+                let statusText = '';
+                let statusIcon = '';
+                
+                switch (task.status) {
+                    case 'running':
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                        statusText = '运行中';
+                        statusIcon = '🔄';
+                        break;
+                    case 'completed':
+                        statusClass = 'bg-green-100 text-green-800';
+                        statusText = '已完成';
+                        statusIcon = '✅';
+                        break;
+                    case 'failed':
+                        statusClass = 'bg-red-100 text-red-800';
+                        statusText = '失败';
+                        statusIcon = '❌';
+                        break;
+                }
+                
+                taskItem.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${statusIcon}</span>
+                            <span class="font-medium text-gray-900">${task.name}</span>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600 mb-3">
+                        <div class="flex justify-between">
+                            <span>开始时间:</span>
+                            <span>${task.startTime.toLocaleString()}</span>
+                        </div>
+                        ${task.endTime ? `
+                        <div class="flex justify-between">
+                            <span>结束时间:</span>
+                            <span>${task.endTime.toLocaleString()}</span>
+                        </div>
+                        ` : ''}
+                        ${task.error ? `
+                        <div class="text-red-600 mt-1">
+                            <span class="font-medium">错误:</span> ${task.error}
+                        </div>
+                        ` : ''}
+                        ${task.progress !== undefined ? `
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>进度:</span>
+                                <span>${task.progress}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${task.progress}%"></div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button class="btn btn-sm bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg transition-all text-xs" onclick="viewTaskLog(${task.id})"><span class="mr-1">📋</span> 查看日志</button>
+                        ${task.status === 'running' ? `<button class="btn btn-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-all text-xs" onclick="stopTask(${task.id})"><span class="mr-1">⏹️</span> 停止</button>` : ''}
+                        ${task.status === 'failed' ? `<button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-all text-xs" onclick="restartTask(${task.id})"><span class="mr-1">🔄</span> 重试</button>` : ''}
+                    </div>
+                `;
+                
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        function viewTaskLog(taskId) {
+            // 模拟查看日志
+            alert(`查看任务 ${taskId} 的日志`);
+        }
+
+        function stopTask(taskId) {
+            // 模拟停止任务
+            alert(`停止任务 ${taskId}`);
+            loadTasks();
+        }
+
+        function restartTask(taskId) {
+            // 模拟重启任务
+            alert(`重启任务 ${taskId}`);
+            loadTasks();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 绑定全选复选框事件
+            selectAllCheckbox.addEventListener('change', (event) => {
+                toggleSelectAll(event.target);
+            });
+            loadRepositories();
+            loadPackages(currentPage);
+            updateRepoInfo();
+            updateDashboard();
+            loadTasks();
+            loadMirrorConfigs();
+            
+            // 从localStorage恢复页面状态
+            const savedPage = localStorage.getItem('currentPage');
+            const savedRepo = localStorage.getItem('currentRepo');
+            
+            if (savedPage === 'mirror') {
+                // 切换到镜像同步页面
+                switchToMirrors();
+            } else if (savedPage === 'repo' && savedRepo) {
+                // 切换到保存的仓库页面
+                switchToRepo(savedRepo);
+            }
+            
+            // 最后检查正在运行的任务，确保页面状态恢复后再显示进度条
+            checkRunningTasks();
+        });
+
+        // 检查是否有正在运行的任务
+        function checkRunningTasks() {
+            fetch('/mirrors/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 显示所有未完成的任务（running 或 paused）
+                        const activeTasks = data.tasks.filter(task => task.status === 'running' || task.status === 'paused');
+                        if (activeTasks.length > 0) {
+                            // 显示最新的任务进度
+                            const latestTask = activeTasks[activeTasks.length - 1];
+                            currentSyncTaskId = latestTask.id;
+                            localStorage.setItem('currentSyncTaskId', currentSyncTaskId);
+                            showSyncProgress();
+                            // 立即获取任务状态并更新进度条
+                            fetch(`/mirrors/tasks/${latestTask.id}`)
+                                .then(response => response.json())
+                                .then(taskData => {
+                                    if (taskData.success) {
+                                        const task = taskData.task;
+                                        updateSyncProgress(
+                                            task.progress,
+                                            task.status,
+                                            task.error,
+                                            task.totalSize,
+                                            task.downloadedSize
+                                        );
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error('Failed to get task status:', err);
+                                });
+                            // 开始轮询任务状态
+                            pollSyncTaskStatus(latestTask.id);
+                        } else {
+                            showMessage('没有正在运行或已暂停的同步任务', 'info');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to check running tasks:', error);
+                    showMessage('获取任务状态失败', 'error');
+                });
+        }
+    </script>
+</body>
+</html>
