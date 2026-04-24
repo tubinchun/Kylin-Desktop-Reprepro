@@ -1,0 +1,20 @@
+# Set default encoding to UTF-8
+* text=auto
+
+# Explicitly set text files to UTF-8
+*.html text encoding=utf-8
+*.js text encoding=utf-8
+*.json text encoding=utf-8
+*.md text encoding=utf-8
+*.yml text encoding=utf-8
+*.yaml text encoding=utf-8
+*.conf text encoding=utf-8
+*.options text encoding=utf-8
+*.key text encoding=utf-8
+
+# Binary files should not be converted
+*.deb binary
+*.exe binary
+*.zip binary
+*.tar.gz binary
+*.gz binary

@@ -84,7 +84,7 @@ function getRepoCodename(repoName) {
     if (!fs.existsSync(distributionsPath)) {
       return 'focal'; // 默认值
     }
-    
+
     const content = fs.readFileSync(distributionsPath, 'utf8');
     const codenameMatch = content.match(/Codename:\s*(\w+)/i);
     return codenameMatch ? codenameMatch[1] : 'focal';
@@ -430,6 +430,7 @@ app.get('/repo/:repoName/:path(*)', (req, res) => {
         }
         
         const baseUrl = `/repo/${repoName}/${requestedPath}`;
+
         let html = `<h1>Kylin Desktop 包管理 - 目录列表: ${baseUrl}</h1>`;
         html += '<ul>';
         
@@ -475,7 +476,7 @@ app.delete('/packages/:packageName', (req, res) => {
       return res.status(400).json({ error: 'Invalid package name' });
     }
     
-    // 从格式 "focal|main|amd64:" 中提取架构信息
+    // 从格式"focal|main|amd64:" 中提取架构信息
     if (architecture.includes('|')) {
       const parts = architecture.split('|');
       architecture = parts[2]?.replace(':', '') || 'all';
@@ -617,7 +618,7 @@ app.get('/packages', (req, res) => {
       const packageName = parts[1];
       const version = parts[2];
       
-      // 从 focal|main|amd64: 中提取架构信息，添加错误处理
+      // 从focal|main|amd64: 中提取架构信息，添加错误处理
       let architecture = 'all';
       try {
         architecture = packageInfo.split('|')[2]?.replace(':', '') || 'all';
@@ -681,12 +682,12 @@ function createMirrorConfig(config) {
     const urlParts = processedUrl.split('://');
     if (urlParts.length === 2) {
       const protocol = urlParts[0] + '://';
-      const rest = urlParts[1].replace(/\/+/g, '/');
+      const rest = urlParts[1].replace(/\/+\//g, '/');
       processedUrl = protocol + rest;
     } else {
-      processedUrl = processedUrl.replace(/\/+/g, '/');
+      processedUrl = processedUrl.replace(/\/+\//g, '/');
     }
-    // 确保URL以斜杠结尾
+    // 确保URL以斜杠结束
     if (processedUrl && !processedUrl.endsWith('/')) {
       processedUrl += '/';
     }
@@ -705,10 +706,10 @@ function createMirrorConfig(config) {
     const finalUrlParts = finalUrl.split('://');
     if (finalUrlParts.length === 2) {
       const protocol = finalUrlParts[0] + '://';
-      const rest = finalUrlParts[1].replace(/\/+/g, '/');
+      const rest = finalUrlParts[1].replace(/\/+\//g, '/');
       finalUrl = protocol + rest;
     }
-    // 确保URL以斜杠结尾
+    // 确保URL以斜杠结束
     if (!finalUrl.endsWith('/')) {
       finalUrl += '/';
     }
@@ -1161,7 +1162,7 @@ function deleteMirrorConfig(configName) {
 }
 
 // 新增：定时任务管理
-const scheduledJobs = {}; // 存储定时任务，格式: { configName: { jobId: job, ... } }
+const scheduledJobs = {}; // 存储定时任务，格式 { configName: { jobId: job, ... } }
 let jobIdCounter = 0;
 
 // 新增：创建同步任务
@@ -1499,8 +1500,8 @@ app.post('/mirrors/tasks/:taskId/pause', (req, res) => {
                 try {
                   process.kill(parseInt(pid), 'SIGSTOP');
                   console.log(`Paused child process ${pid} on Linux`);
-                } catch (e) {
-                  console.error(`Failed to pause child process ${pid}:`, e.message);
+                } catch (e2) {
+                  console.error(`Failed to pause child process ${pid}:`, e2.message);
                 }
               });
             } catch (e2) {
@@ -1545,14 +1546,15 @@ app.post('/mirrors/tasks/:taskId/pause', (req, res) => {
         saveSyncTasks();
         res.json({
           success: true,
-          message: 'Task paused successfully'
+          message: 'Task paused successfully',
+          taskId
         });
       } catch (error) {
         console.error('Failed to pause task:', error.message);
-        res.status(500).json({ error: 'Failed to pause task' });
+        res.status(500).json({ error: error.message });
       }
     } else {
-      res.status(400).json({ error: 'No process to pause' });
+      res.status(400).json({ error: 'No running process found for this task' });
     }
   } catch (error) {
     console.error('Failed to pause task:', error.message);
@@ -1660,8 +1662,8 @@ app.post('/mirrors/tasks/:taskId/resume', (req, res) => {
                 try {
                   process.kill(parseInt(pid), 'SIGCONT');
                   console.log(`Resumed child process ${pid} on Linux`);
-                } catch (e) {
-                  console.error(`Failed to resume child process ${pid}:`, e.message);
+                } catch (e2) {
+                  console.error(`Failed to resume child process ${pid}:`, e2.message);
                 }
               });
             } catch (e2) {
@@ -1680,7 +1682,7 @@ app.post('/mirrors/tasks/:taskId/resume', (req, res) => {
               } catch (e) {
                 console.error(`Failed to resume apt-mirror process ${pid}:`, e.message);
               }
-            });
+            }
           } catch (e) {
             console.error('Failed to get apt-mirror processes:', e.message);
           }
@@ -1706,14 +1708,15 @@ app.post('/mirrors/tasks/:taskId/resume', (req, res) => {
         saveSyncTasks();
         res.json({
           success: true,
-          message: 'Task resumed successfully'
+          message: 'Task resumed successfully',
+          taskId
         });
       } catch (error) {
         console.error('Failed to resume task:', error.message);
-        res.status(500).json({ error: 'Failed to resume task' });
+        res.status(500).json({ error: error.message });
       }
     } else {
-      res.status(400).json({ error: 'No process to resume' });
+      res.status(400).json({ error: 'No paused process found for this task' });
     }
   } catch (error) {
     console.error('Failed to resume task:', error.message);
@@ -1721,267 +1724,174 @@ app.post('/mirrors/tasks/:taskId/resume', (req, res) => {
   }
 });
 
-app.get('/mirrors/:configName/logs', (req, res) => {
+// 新增：取消同步任务API
+app.post('/mirrors/tasks/:taskId/cancel', (req, res) => {
   try {
-    const configName = req.params.configName;
-    const logs = [];
-    
-    const files = fs.readdirSync(mirrorLogDir);
-    files.forEach(file => {
-      if (file.startsWith(configName)) {
-        logs.push({
-          filename: file,
-          path: path.join(mirrorLogDir, file),
-          size: fs.statSync(path.join(mirrorLogDir, file)).size,
-          created: fs.statSync(path.join(mirrorLogDir, file)).birthtime
-        });
-      }
-    });
-    
-    // 按创建时间排序
-    logs.sort((a, b) => b.created - a.created);
-    
-    res.json({
-      success: true,
-      logs
-    });
-  } catch (error) {
-    console.error('Failed to get mirror logs:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/mirrors/:configName/logs/:logFile', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const logFile = req.params.logFile;
-    const logPath = path.join(mirrorLogDir, logFile);
-    
-    if (!fs.existsSync(logPath)) {
-      return res.status(404).json({ error: 'Log file not found' });
-    }
-    
-    const content = fs.readFileSync(logPath, 'utf8');
-    res.json({
-      success: true,
-      content
-    });
-  } catch (error) {
-    console.error('Failed to read log file:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：设置定时同步任务API
-app.post('/mirrors/:configName/schedule', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const { scheduleExpression } = req.body;
-    
-    const result = setScheduledSync(configName, scheduleExpression);
-    
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json(result);
-    }
-  } catch (error) {
-    console.error('Failed to set scheduled sync:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：获取定时任务状态API
-app.get('/mirrors/:configName/schedule', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const jobs = scheduledJobs[configName];
-    
-    res.json({
-      success: true,
-      hasScheduledJob: !!jobs,
-      tasks: getSyncTasks(configName)
-    });
-  } catch (error) {
-    console.error('Failed to get schedule status:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：创建同步任务API
-app.post('/mirrors/:configName/tasks', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const { scheduleExpression, taskName } = req.body;
-    
-    if (!scheduleExpression || !taskName) {
-      return res.status(400).json({ error: 'Missing required parameters' });
-    }
-    
-    const result = createSyncTask(configName, scheduleExpression, taskName);
-    
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json(result);
-    }
-  } catch (error) {
-    console.error('Failed to create sync task:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：删除同步任务API
-app.delete('/mirrors/:configName/tasks/:taskId', (req, res) => {
-  try {
-    const configName = req.params.configName;
     const taskId = req.params.taskId;
+    const task = syncTasks[taskId];
     
-    const result = deleteSyncTask(configName, taskId);
-    
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json(result);
-    }
-  } catch (error) {
-    console.error('Failed to delete sync task:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：停止同步任务API
-app.post('/mirrors/:configName/tasks/:taskId/stop', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const taskId = req.params.taskId;
-    
-    if (!scheduledJobs[configName] || !scheduledJobs[configName][taskId]) {
+    if (!task) {
       return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    if (task.status === 'completed' || task.status === 'failed') {
+      return res.status(400).json({ error: 'Task is already completed or failed' });
     }
     
     // 取消任务
-    scheduledJobs[configName][taskId].job.cancel();
-    
-    // 更新任务状态
-    scheduledJobs[configName][taskId].status = 'stopped';
-    
-    res.json({
-      success: true,
-      message: `Sync task stopped for ${configName}`
-    });
-  } catch (error) {
-    console.error('Failed to stop sync task:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：开始同步任务API
-app.post('/mirrors/:configName/tasks/:taskId/start', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const taskId = req.params.taskId;
-    
-    if (!scheduledJobs[configName] || !scheduledJobs[configName][taskId]) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    const task = scheduledJobs[configName][taskId];
-    
-    // 重新创建定时任务
-    const newJob = schedule.scheduleJob(task.schedule, async () => {
-      console.log(`Running scheduled sync task ${task.name} for ${configName}`);
+    if (task.childProcess) {
       try {
-        await runMirrorSync(configName);
-        console.log(`Scheduled sync task ${task.name} completed for ${configName}`);
+        const isWindows = process.platform === 'win32';
+        
+        if (isWindows) {
+          // 在Windows上使用更有效的方法终止进程及其所有相关进程
+          const { execSync } = require('child_process');
+          
+          // 方法1：终止主进程及其直接子进程
+          execSync(`taskkill /F /PID ${task.childProcess.pid}`, { stdio: 'ignore' });
+          console.log(`Terminated process ${task.childProcess.pid} on Windows`);
+          
+          // 方法2：尝试查找并终止所有与apt-mirror相关的进程
+          try {
+            // 查找所有apt-mirror进程
+            const wmicResult = execSync(`wmic process where "CommandLine like '%apt-mirror%'" get ProcessId`, { encoding: 'utf8' });
+            const lines = wmicResult.trim().split('\n');
+            for (let i = 1; i < lines.length; i++) { // 跳过标题行
+              const pid = lines[i].trim();
+              if (pid) {
+                try {
+                  execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
+                  console.log(`Terminated apt-mirror process ${pid} on Windows`);
+                } catch (e) {
+                  console.error(`Failed to terminate apt-mirror process ${pid}:`, e.message);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to get apt-mirror processes:', e.message);
+          }
+          
+          // 方法3：尝试查找并终止所有wget进程（apt-mirror使用wget下载）
+          try {
+            const wmicResult = execSync(`wmic process where "Name='wget.exe'" get ProcessId`, { encoding: 'utf8' });
+            const lines = wmicResult.trim().split('\n');
+            for (let i = 1; i < lines.length; i++) { // 跳过标题行
+              const pid = lines[i].trim();
+              if (pid) {
+                try {
+                  execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
+                  console.log(`Terminated wget process ${pid} on Windows`);
+                } catch (e) {
+                  console.error(`Failed to terminate wget process ${pid}:`, e.message);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to get wget processes:', e.message);
+          }
+        } else {
+          // 在Linux/Unix系统上使用更有效的方法终止进程及其所有相关进程
+          const { execSync } = require('child_process');
+          
+          // 方法1：终止主进程
+          task.childProcess.kill('SIGTERM');
+          console.log(`Terminated process ${task.childProcess.pid} with SIGTERM`);
+          
+          // 方法2：使用pstree命令获取所有子进程（包括多层级）
+          try {
+            const pstreeResult = execSync(`pstree -p ${task.childProcess.pid}`, { encoding: 'utf8' });
+            // 提取所有PID
+            const pidMatches = pstreeResult.match(/\((\d+)\)/g);
+            if (pidMatches) {
+              const pids = pidMatches.map(match => match.replace(/[()]/g, '')).filter(pid => pid !== task.childProcess.pid.toString());
+              pids.forEach(pid => {
+                try {
+                  process.kill(parseInt(pid), 'SIGTERM');
+                  console.log(`Terminated child process ${pid} on Linux`);
+                } catch (e) {
+                  console.error(`Failed to terminate child process ${pid}:`, e.message);
+                }
+              });
+            }
+          } catch (e) {
+            console.error('Failed to get child processes with pstree:', e.message);
+            
+            // 备选方法：使用ps命令递归获取所有子进程
+            try {
+              const psResult = execSync(`ps -ef | grep -E "^.*\s+${task.childProcess.pid}\s+" | awk '{print $2}'`, { encoding: 'utf8' });
+              const pids = psResult.trim().split('\n').filter(pid => pid);
+              pids.forEach(pid => {
+                try {
+                  process.kill(parseInt(pid), 'SIGTERM');
+                  console.log(`Terminated child process ${pid} on Linux`);
+                } catch (e2) {
+                  console.error(`Failed to terminate child process ${pid}:`, e2.message);
+                }
+              });
+            } catch (e2) {
+              console.error('Failed to get child processes with ps:', e2.message);
+            }
+          }
+          
+          // 方法3：尝试查找并终止所有与apt-mirror相关的进程
+          try {
+            const psResult = execSync(`ps -ef | grep -i apt-mirror | grep -v grep | awk '{print $2}'`, { encoding: 'utf8' });
+            const pids = psResult.trim().split('\n').filter(pid => pid);
+            pids.forEach(pid => {
+              try {
+                process.kill(parseInt(pid), 'SIGTERM');
+                console.log(`Terminated apt-mirror process ${pid} on Linux`);
+              } catch (e) {
+                console.error(`Failed to terminate apt-mirror process ${pid}:`, e.message);
+              }
+            });
+          } catch (e) {
+            console.error('Failed to get apt-mirror processes:', e.message);
+          }
+          
+          // 方法4：尝试查找并终止所有wget进程（apt-mirror使用wget下载）
+          try {
+            const psResult = execSync(`ps -ef | grep -i wget | grep -v grep | awk '{print $2}'`, { encoding: 'utf8' });
+            const pids = psResult.trim().split('\n').filter(pid => pid);
+            pids.forEach(pid => {
+              try {
+                process.kill(parseInt(pid), 'SIGTERM');
+                console.log(`Terminated wget process ${pid} on Linux`);
+              } catch (e) {
+                console.error(`Failed to terminate wget process ${pid}:`, e.message);
+              }
+            });
+          } catch (e) {
+            console.error('Failed to get wget processes:', e.message);
+          }
+        }
       } catch (error) {
-        console.error(`Scheduled sync task ${task.name} failed for ${configName}:`, error.message);
+        console.error('Failed to terminate process:', error.message);
       }
-    });
-    
-    // 更新任务
-    scheduledJobs[configName][taskId].job = newJob;
-    scheduledJobs[configName][taskId].status = 'running';
-    
-    res.json({
-      success: true,
-      message: `Sync task started for ${configName}`
-    });
-  } catch (error) {
-    console.error('Failed to start sync task:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：获取同步任务列表API
-app.get('/mirrors/:configName/tasks', (req, res) => {
-  try {
-    const configName = req.params.configName;
-    const tasks = getSyncTasks(configName);
-    
-    res.json({
-      success: true,
-      tasks
-    });
-  } catch (error) {
-    console.error('Failed to get sync tasks:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：配置备份API
-app.get('/mirrors/backup', (req, res) => {
-  try {
-    const backupDir = path.join(__dirname, 'backups');
-    fs.ensureDirSync(backupDir);
-    
-    const backupFileName = `mirror-configs-${Date.now()}.json`;
-    const backupPath = path.join(backupDir, backupFileName);
-    
-    const configs = getMirrorConfigs();
-    const backupData = {
-      timestamp: new Date().toISOString(),
-      configs: configs
-    };
-    
-    fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
-    
-    res.download(backupPath, backupFileName, (err) => {
-      if (err) {
-        console.error('Failed to download backup:', err.message);
-        res.status(500).json({ error: err.message });
-      }
-    });
-  } catch (error) {
-    console.error('Failed to create backup:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 新增：配置恢复API
-app.post('/mirrors/restore', (req, res) => {
-  try {
-    const { backupData } = req.body;
-    
-    if (!backupData || !backupData.configs) {
-      return res.status(400).json({ error: 'Invalid backup data' });
     }
     
-    // 恢复配置
-    backupData.configs.forEach(config => {
-      createMirrorConfig(config);
-    });
+    task.status = 'canceled';
+    task.endTime = new Date().toISOString();
+    saveSyncTasks();
     
     res.json({
       success: true,
-      message: `Successfully restored ${backupData.configs.length} mirror configurations`
+      message: 'Task canceled successfully',
+      taskId
     });
   } catch (error) {
-    console.error('Failed to restore backup:', error.message);
+    console.error('Failed to cancel task:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
+// 启动服务器
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Repository root directory: ${reposRootDir}`);
+  console.log(`Uploads directory: ${uploadsDir}`);
+  console.log(`Mirror configs directory: ${mirrorConfigDir}`);
+  console.log(`Mirror syncs directory: ${mirrorSyncDir}`);
+  console.log(`Mirror logs directory: ${mirrorLogDir}`);
+  console.log(`Access the application at: http://localhost:${PORT}`);
 });
