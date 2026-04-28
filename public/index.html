@@ -570,6 +570,216 @@
         .hidden {
             display: none;
         }
+
+        /* 状态标签样式 */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status-running {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .status-paused {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-completed {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .status-failed {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .status-stopped {
+            background-color: rgba(156, 163, 175, 0.1);
+            color: #9ca3af;
+        }
+
+        /* 小按钮样式 */
+        .btn-xs {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        /* 上传进度容器 */
+        .upload-progress-container {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        /* 上传进度头部 */
+        .upload-progress-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-progress-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border-radius: 12px;
+            font-size: 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        .upload-progress-info {
+            flex: 1;
+        }
+
+        .upload-progress-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .upload-progress-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* 文件列表 */
+        .upload-file-list {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .upload-file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .upload-file-item:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .upload-file-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .upload-file-icon {
+            font-size: 1rem;
+        }
+
+        .upload-file-name {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .upload-file-status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background-color: rgba(156, 163, 175, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .upload-file-status.success {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .upload-file-status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .upload-file-status.uploading {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        /* 进度条容器 */
+        .upload-progress-bar-container {
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-progress-bar-bg {
+            height: 12px;
+            background: rgba(156, 163, 175, 0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .upload-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* 进度统计 */
+        .upload-progress-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* 上传速度 */
+        .upload-speed-info {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(156, 163, 175, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -608,13 +818,13 @@
                 </a>
             </li>
             <li class="sidebar-nav-item">
-                <a href="#" class="sidebar-nav-link" data-section="repo-info">
+                <a href="#" class="sidebar-nav-link" data-section="repoInfo">
                     <span>ℹ️</span>
                     <span>仓库信息</span>
                 </a>
             </li>
             <li class="sidebar-nav-item">
-                <a href="#" class="sidebar-nav-link" data-section="mirror-sync">
+                <a href="#" class="sidebar-nav-link" data-section="mirrorSync">
                     <span>🔄</span>
                     <span>镜像同步</span>
                 </a>
@@ -687,6 +897,12 @@
                     <h3 class="card-title">上传 Kylin 包</h3>
                     <p class="card-description">点击或拖拽文件到此处，支持批量上传多个 .deb 文件</p>
                 </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="uploadRepoSelect" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">选择目标仓库</label>
+                    <select id="uploadRepoSelect" class="form-input" style="width: 100%;">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
                 <div class="upload-area" id="uploadArea">
                     <div class="upload-icon">📁</div>
                     <h4 class="upload-title">拖拽文件到此处或点击上传</h4>
@@ -694,13 +910,38 @@
                     <input type="file" id="fileInput" multiple accept=".deb" style="display: none;">
                     <button class="btn btn-primary" id="uploadBtn">选择文件</button>
                 </div>
-                <div id="uploadProgress" class="hidden">
-                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="loading"></div>
-                        <span id="uploadProgressText">正在上传...</span>
+                <div id="uploadProgress" class="hidden upload-progress-container">
+                    <div class="upload-progress-header">
+                        <div class="upload-progress-icon">📤</div>
+                        <div class="upload-progress-info">
+                            <div id="uploadProgressText" class="upload-progress-title">正在上传...</div>
+                            <div id="uploadProgressSubtitle" class="upload-progress-subtitle">准备上传文件...</div>
+                        </div>
                     </div>
-                    <div style="width: 100%; height: 8px; background-color: var(--light-color); border-radius: 4px; overflow: hidden;">
-                        <div id="uploadProgressBar" style="height: 100%; background-color: var(--primary-color); width: 0%; transition: width 0.3s ease;"></div>
+                    
+                    <!-- 文件列表 -->
+                    <div id="uploadFileList" class="upload-file-list">
+                        <div class="upload-file-item">
+                            <span class="upload-file-icon">📄</span>
+                            <span class="upload-file-name">准备中...</span>
+                            <span class="upload-file-status">等待上传</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 主进度条 -->
+                    <div class="upload-progress-bar-container">
+                        <div class="upload-progress-bar-bg">
+                            <div id="uploadProgressBar" class="upload-progress-bar"></div>
+                        </div>
+                        <div class="upload-progress-stats">
+                            <span id="uploadProgressPercent">0%</span>
+                            <span id="uploadProgressSize">0 / 0 MB</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 上传速度 -->
+                    <div class="upload-speed-info">
+                        <span id="uploadSpeed">-- KB/s</span>
                     </div>
                 </div>
             </div>
@@ -718,6 +959,11 @@
                     <div class="packages-header-left">
                         <h3 class="card-title">仓库中的包</h3>
                         <p class="card-description">查看和管理仓库中的软件包</p>
+                        <div style="margin-top: 0.5rem;">
+                            <select id="packageRepoSelect" class="form-input" style="width: 200px;">
+                                <option value="">加载中...</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="packages-header-right">
                         <div class="search-container">
@@ -772,7 +1018,7 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">Codename</div>
-                        <div class="info-value" id="repoCodenameValue">focal</div>
+                        <div class="info-value" id="repoInfoCodenameValue">focal</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Components</div>
@@ -784,7 +1030,7 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">状态</div>
-                        <div class="info-value status-badge active" id="repoStatusValue">活跃</div>
+                        <div class="info-value status-badge active" id="repoInfoStatusValue">活跃</div>
                     </div>
                 </div>
                 
@@ -814,6 +1060,41 @@ sudo apt install package-name
                     <li>不同版本的包会保留</li>
                     <li>无文件数量限制</li>
                 </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">新建仓库</h3>
+                    <p class="card-description">创建新的软件包仓库</p>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label for="newRepoName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">仓库名称</label>
+                            <input type="text" id="newRepoName" class="form-input" placeholder="请输入仓库名称" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label for="newRepoCodename" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Codename</label>
+                            <select id="newRepoCodename" class="form-input" style="width: 100%;">
+                                <option value="focal">focal</option>
+                                <option value="jammy">jammy</option>
+                                <option value="noble">noble</option>
+                                <option value="lunar">lunar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="createRepoBtn" style="width: 100%;">创建仓库</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">仓库列表</h3>
+                    <p class="card-description">管理已有的仓库</p>
+                </div>
+                <div id="repoList" class="table-container">
+                    <p style="text-align: center; color: var(--text-secondary);">加载中...</p>
+                </div>
             </div>
         </section>
 
@@ -851,15 +1132,75 @@ sudo apt install package-name
 
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">手动同步</h3>
-                    <p class="card-description">立即执行同步任务</p>
+                    <h3 class="card-title">镜像配置</h3>
+                    <p class="card-description">管理 apt-mirror 配置文件</p>
                 </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <button class="btn btn-primary" id="syncNowBtn">立即同步</button>
-                    <div id="syncProgress" class="hidden">
+                <div id="mirrorConfigList" class="table-container">
+                    <p style="text-align: center; color: var(--text-secondary);">加载中...</p>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                    <button class="btn btn-primary" id="addMirrorBtn">添加镜像配置</button>
+                    <button class="btn btn-success" id="syncNowBtn">立即同步选中</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">添加/编辑镜像配置</h3>
+                    <p class="card-description">遵循 apt-mirror 配置格式</p>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <label for="mirrorConfigName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">配置名称</label>
+                        <input type="text" id="mirrorConfigName" class="form-input" placeholder="例如: ubuntu-focal" style="width: 100%;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label for="mirrorDebLine" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Deb 源地址</label>
+                        <input type="text" id="mirrorDebLine" class="form-input" placeholder="deb http://archive.ubuntu.com/ubuntu focal main restricted universe" style="width: 100%;">
+                        <small style="color: var(--text-secondary);">格式: deb &lt;url&gt; &lt;codename&gt; &lt;components&gt;</small>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label for="mirrorBandwidth" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">带宽限制 (可选)</label>
+                        <input type="text" id="mirrorBandwidth" class="form-input" placeholder="例如: 100m 表示 100MB/s，不填则不限速" style="width: 100%;">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="saveMirrorBtn">保存配置</button>
+                        <button class="btn btn-secondary" id="cancelMirrorBtn">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">同步进度</h3>
+                    <p class="card-description">查看当前同步任务的进度</p>
+                </div>
+                <div id="syncProgress" class="hidden" style="padding: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
                         <div class="loading"></div>
                         <span id="syncProgressText">正在同步...</span>
                     </div>
+                    <div style="width: 100%; height: 8px; background-color: var(--light-color); border-radius: 4px; overflow: hidden;">
+                        <div id="syncProgressBar" style="height: 100%; background-color: var(--primary-color); width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div id="syncProgressInfo" style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                        <span id="syncSizeInfo">已下载: 0 GiB / 总计: -- GiB</span>
+                        <span id="syncFileInfo">文件: 0 / --</span>
+                    </div>
+                    <div id="syncControls" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <button id="pauseSyncBtn" class="btn btn-warning" style="display: none;">暂停同步</button>
+                        <button id="stopSyncBtn" class="btn btn-danger" style="display: none;">停止同步</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">同步任务列表</h3>
+                    <p class="card-description">查看所有同步任务的历史记录</p>
+                </div>
+                <div id="syncTaskList" class="table-container">
+                    <p style="text-align: center; color: var(--text-secondary);">加载中...</p>
                 </div>
             </div>
         </section>
@@ -908,12 +1249,63 @@ sudo apt install package-name
                     const sectionId = this.getAttribute('data-section') + 'Section';
                     document.getElementById(sectionId).classList.remove('hidden');
                     
+                    // 加载对应的数据
+                    const section = this.getAttribute('data-section');
+                    if (section === 'repoInfo') {
+                        // 离开镜像同步页面时清除定时器
+                        if (syncInterval) {
+                            clearInterval(syncInterval);
+                            syncInterval = null;
+                        }
+                        loadRepoInfo();
+                        loadRepoList();
+                    } else if (section === 'mirrorSync') {
+                        // 清除已存在的定时器，确保只有一个定时器在运行
+                        if (syncInterval) {
+                            clearInterval(syncInterval);
+                            syncInterval = null;
+                        }
+                        loadSyncStatus();
+                        loadMirrorConfigs();
+                        loadSyncTasks();
+                    } else if (section === 'packages') {
+                        // 离开镜像同步页面时清除定时器
+                        if (syncInterval) {
+                            clearInterval(syncInterval);
+                            syncInterval = null;
+                        }
+                        loadPackages();
+                    } else if (section === 'dashboard') {
+                        // 离开镜像同步页面时清除定时器
+                        if (syncInterval) {
+                            clearInterval(syncInterval);
+                            syncInterval = null;
+                        }
+                    }
+                    
                     // 在移动设备上点击后关闭侧边栏
                     if (window.innerWidth <= 768) {
                         sidebar.classList.remove('open');
                     }
                 });
             });
+            
+            // 创建仓库按钮
+            const createRepoBtn = document.getElementById('createRepoBtn');
+            if (createRepoBtn) {
+                createRepoBtn.addEventListener('click', function() {
+                    createRepo();
+                });
+            }
+            
+            // 包管理仓库选择器变更事件
+            const packageRepoSelect = document.getElementById('packageRepoSelect');
+            if (packageRepoSelect) {
+                packageRepoSelect.addEventListener('change', function() {
+                    currentPage = 1;
+                    loadPackages(1);
+                });
+            }
             
             // 文件上传处理
             const uploadArea = document.getElementById('uploadArea');
@@ -941,19 +1333,24 @@ sudo apt install package-name
             });
             
             uploadArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.style.borderColor = 'var(--border-color)';
-                this.style.backgroundColor = 'transparent';
-                
-                if (e.dataTransfer.files.length > 0) {
-                    handleFileUpload(e.dataTransfer.files);
-                }
-            });
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-color)';
+            this.style.backgroundColor = 'transparent';
+            
+            if (e.dataTransfer.files.length > 0) {
+                // 将FileList转换为数组
+                const filesArray = Array.from(e.dataTransfer.files);
+                handleFileUpload(filesArray);
+            }
+        });
             
             // 文件选择
             fileInput.addEventListener('change', function() {
+                console.log('File input changed, files selected:', this.files.length);
                 if (this.files.length > 0) {
-                    handleFileUpload(this.files);
+                    // 将FileList转换为数组
+                    const filesArray = Array.from(this.files);
+                    handleFileUpload(filesArray);
                 }
             });
             
@@ -1002,75 +1399,265 @@ sudo apt install package-name
             const syncNowBtn = document.getElementById('syncNowBtn');
             if (syncNowBtn) {
                 syncNowBtn.addEventListener('click', function() {
-                    startSync();
+                    syncSelectedMirrors();
                 });
             }
+            
+            // 暂停同步按钮
+            const pauseSyncBtn = document.getElementById('pauseSyncBtn');
+            if (pauseSyncBtn) {
+                pauseSyncBtn.addEventListener('click', function() {
+                    togglePauseSync();
+                });
+            }
+            
+            // 停止同步按钮
+            const stopSyncBtn = document.getElementById('stopSyncBtn');
+            if (stopSyncBtn) {
+                stopSyncBtn.addEventListener('click', function() {
+                    stopSync();
+                });
+            }
+            
+            // 添加镜像配置按钮
+            const addMirrorBtn = document.getElementById('addMirrorBtn');
+            if (addMirrorBtn) {
+                addMirrorBtn.addEventListener('click', function() {
+                    clearMirrorForm();
+                    showMessage('请填写镜像配置信息，然后点击"保存配置"', 'info');
+                });
+            }
+            
+            // 保存镜像配置按钮
+            const saveMirrorBtn = document.getElementById('saveMirrorBtn');
+            if (saveMirrorBtn) {
+                saveMirrorBtn.addEventListener('click', function() {
+                    saveMirrorConfig();
+                });
+            }
+            
+            // 取消编辑按钮
+            const cancelMirrorBtn = document.getElementById('cancelMirrorBtn');
+            if (cancelMirrorBtn) {
+                cancelMirrorBtn.addEventListener('click', function() {
+                    cancelMirrorEdit();
+                });
+            }
+            
+            // 加载镜像配置列表
+            loadMirrorConfigs();
+            
+            // 加载仓库列表
+            loadRepoList();
         }
 
         // 处理文件上传
         function handleFileUpload(files) {
+            console.log('handleFileUpload called with', files.length, 'files');
+            
             const uploadProgress = document.getElementById('uploadProgress');
             const uploadProgressBar = document.getElementById('uploadProgressBar');
             const uploadProgressText = document.getElementById('uploadProgressText');
+            const uploadProgressSubtitle = document.getElementById('uploadProgressSubtitle');
+            const uploadFileList = document.getElementById('uploadFileList');
+            const uploadProgressPercent = document.getElementById('uploadProgressPercent');
+            const uploadProgressSize = document.getElementById('uploadProgressSize');
+            const uploadSpeed = document.getElementById('uploadSpeed');
+            const uploadRepoSelect = document.getElementById('uploadRepoSelect');
+            
+            console.log('uploadRepoSelect element:', uploadRepoSelect);
+            console.log('uploadRepoSelect value:', uploadRepoSelect ? uploadRepoSelect.value : 'null');
+            
+            // 获取选择的仓库
+            const repoName = uploadRepoSelect ? uploadRepoSelect.value : '';
+            
+            console.log('Selected repoName:', repoName);
+            
+            if (!repoName) {
+                showMessage('请先选择目标仓库', 'error');
+                return;
+            }
+            
+            // 计算总文件大小
+            const totalSize = Array.from(files).reduce((acc, file) => acc + file.size, 0);
+            const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+            
+            // 显示文件列表
+            let fileListHtml = '';
+            files.forEach((file, index) => {
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                fileListHtml += `
+                    <div class="upload-file-item" data-file-index="${index}">
+                        <span class="upload-file-icon">📄</span>
+                        <span class="upload-file-name" title="${file.name}">${file.name}</span>
+                        <span class="upload-file-status">等待上传</span>
+                    </div>
+                `;
+            });
+            uploadFileList.innerHTML = fileListHtml;
             
             // 显示上传进度
             uploadProgress.classList.remove('hidden');
             uploadProgressBar.style.width = '0%';
             uploadProgressText.textContent = '正在上传...';
+            uploadProgressSubtitle.textContent = `准备上传 ${files.length} 个文件，共 ${totalSizeMB} MB`;
+            uploadProgressPercent.textContent = '0%';
+            uploadProgressSize.textContent = `0 / ${totalSizeMB} MB`;
+            uploadSpeed.textContent = '-- KB/s';
             
             // 创建 FormData
             const formData = new FormData();
             for (let i = 0; i < files.length; i++) {
                 formData.append('debFiles', files[i]);
             }
+            formData.append('repoName', repoName);
             
-            // 发送上传请求
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    uploadProgressText.textContent = '上传成功！';
-                    uploadProgressBar.style.width = '100%';
+            // 记录开始时间和已上传大小
+            const startTime = Date.now();
+            let uploadedBytes = 0;
+            
+            // 创建上传请求，支持进度跟踪
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload');
+            
+            // 上传进度回调
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    uploadedBytes = e.loaded;
+                    const percent = ((e.loaded / e.total) * 100).toFixed(1);
+                    const uploadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
                     
-                    // 显示成功消息
-                    showMessage('文件上传成功', 'success');
+                    // 更新进度条
+                    uploadProgressBar.style.width = percent + '%';
+                    uploadProgressPercent.textContent = percent + '%';
+                    uploadProgressSize.textContent = `${uploadedMB} / ${totalSizeMB} MB`;
                     
-                    // 重新加载包列表
-                    setTimeout(() => {
-                        loadPackages();
-                        uploadProgress.classList.add('hidden');
-                    }, 1500);
-                } else {
-                    uploadProgressText.textContent = '上传失败！';
-                    showMessage('文件上传失败: ' + data.message, 'error');
-                    uploadProgress.classList.add('hidden');
+                    // 计算上传速度
+                    const elapsedTime = (Date.now() - startTime) / 1000;
+                    if (elapsedTime > 0) {
+                        const speedKBps = (e.loaded / 1024 / elapsedTime).toFixed(1);
+                        uploadSpeed.textContent = `${speedKBps} KB/s`;
+                    }
+                    
+                    // 更新状态文本
+                    const currentFileIndex = Math.min(
+                        Math.floor((e.loaded / e.total) * files.length),
+                        files.length - 1
+                    );
+                    const fileItems = uploadFileList.querySelectorAll('.upload-file-item');
+                    fileItems.forEach((item, index) => {
+                        const statusSpan = item.querySelector('.upload-file-status');
+                        if (index < currentFileIndex) {
+                            statusSpan.textContent = '已完成';
+                            statusSpan.className = 'upload-file-status success';
+                        } else if (index === currentFileIndex) {
+                            statusSpan.textContent = '上传中';
+                            statusSpan.className = 'upload-file-status uploading';
+                        }
+                    });
+                    
+                    uploadProgressSubtitle.textContent = `正在上传: ${files[currentFileIndex]?.name || '处理中...'}`;
                 }
-            })
-            .catch(error => {
-                console.error('上传错误:', error);
-                uploadProgressText.textContent = '上传失败！';
-                showMessage('上传过程中发生错误', 'error');
-                uploadProgress.classList.add('hidden');
             });
+            
+            // 请求完成回调
+            xhr.addEventListener('load', function() {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        // 更新所有文件状态为成功
+                        const fileItems = uploadFileList.querySelectorAll('.upload-file-item');
+                        fileItems.forEach(item => {
+                            const statusSpan = item.querySelector('.upload-file-status');
+                            statusSpan.textContent = '已完成';
+                            statusSpan.className = 'upload-file-status success';
+                        });
+                        
+                        uploadProgressText.textContent = '上传成功！';
+                        uploadProgressBar.style.width = '100%';
+                        uploadProgressPercent.textContent = '100%';
+                        uploadProgressSubtitle.textContent = `成功上传 ${files.length} 个文件`;
+                        
+                        showMessage('文件上传成功', 'success');
+                        
+                        setTimeout(() => {
+                            loadPackages();
+                            uploadProgress.classList.add('hidden');
+                        }, 2000);
+                    } else {
+                        uploadProgressText.textContent = '上传失败！';
+                        uploadProgressSubtitle.textContent = '上传过程中发生错误';
+                        showMessage('文件上传失败: ' + (data.message || '未知错误'), 'error');
+                        setTimeout(() => {
+                            uploadProgress.classList.add('hidden');
+                        }, 2000);
+                    }
+                } catch (error) {
+                    uploadProgressText.textContent = '上传失败！';
+                    showMessage('上传过程中发生错误', 'error');
+                    setTimeout(() => {
+                        uploadProgress.classList.add('hidden');
+                    }, 2000);
+                }
+            });
+            
+            // 请求错误回调
+            xhr.addEventListener('error', function() {
+                uploadProgressText.textContent = '上传失败！';
+                uploadProgressSubtitle.textContent = '网络连接错误';
+                showMessage('上传过程中发生网络错误', 'error');
+                setTimeout(() => {
+                    uploadProgress.classList.add('hidden');
+                }, 2000);
+            });
+            
+            // 发送请求
+            xhr.send(formData);
         }
 
         // 加载包列表
-        function loadPackages() {
+        function loadPackages(page = 1) {
+            currentPage = page;
             const packagesTable = document.getElementById('packagesTable');
+            const packageRepoSelect = document.getElementById('packageRepoSelect');
             if (!packagesTable) return;
+            
+            // 获取选择的仓库
+            const repoName = packageRepoSelect ? packageRepoSelect.value : '';
             
             // 显示加载状态
             packagesTable.querySelector('tbody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">加载中...</td></tr>';
             
+            // 构建请求URL
+            let url = `/packages?page=${page}&limit=${itemsPerPage}`;
+            if (repoName) {
+                url += `&repo=${encodeURIComponent(repoName)}`;
+            }
+            
             // 发送请求获取包列表
-            fetch('/packages')
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         renderPackages(data.packages);
-                        updatePackageCount(data.packages.length);
+                        updatePackageCount(data.pagination.total);
+                        
+                        // 更新分页信息
+                        const pageInfo = document.getElementById('pageInfo');
+                        const prevPage = document.getElementById('prevPage');
+                        const nextPage = document.getElementById('nextPage');
+                        
+                        if (pageInfo) {
+                            pageInfo.textContent = `第 ${data.pagination.page} 页，共 ${data.pagination.totalPages} 页`;
+                        }
+                        
+                        if (prevPage) {
+                            prevPage.disabled = data.pagination.page === 1;
+                        }
+                        
+                        if (nextPage) {
+                            nextPage.disabled = data.pagination.page === data.pagination.totalPages;
+                        }
                     } else {
                         packagesTable.querySelector('tbody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
                     }
@@ -1206,13 +1793,8 @@ sudo apt install package-name
             currentPage += direction;
             if (currentPage < 1) currentPage = 1;
             
-            // 这里应该根据 currentPage 和 itemsPerPage 重新加载包列表
-            // 为了简化，这里只更新分页信息
-            document.getElementById('pageInfo').textContent = `第 ${currentPage} 页，共 1 页`;
-            
-            // 更新分页按钮状态
-            document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = true; // 简化处理
+            // 重新加载包列表
+            loadPackages(currentPage);
         }
 
         // 加载仓库信息
@@ -1224,6 +1806,7 @@ sudo apt install package-name
                         // 更新仓库信息
                         document.getElementById('repoNameValue').textContent = data.repoName || 'default';
                         document.getElementById('repoCodenameValue').textContent = data.codename || 'focal';
+                        document.getElementById('repoInfoCodenameValue').textContent = data.codename || 'focal';
                         
                         // 更新仓库访问地址
                         const repoUrlInfo = document.getElementById('repoUrlInfo');
@@ -1252,6 +1835,256 @@ sudo apt install package-name`;
                 });
         }
 
+        // 加载仓库列表
+        function loadRepoList() {
+            const repoList = document.getElementById('repoList');
+            const uploadRepoSelect = document.getElementById('uploadRepoSelect');
+            const packageRepoSelect = document.getElementById('packageRepoSelect');
+            
+            fetch('/repos')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.repos) {
+                        // 更新仓库列表
+                        if (repoList) {
+                            if (data.repos.length === 0) {
+                                repoList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">暂无仓库</p>';
+                            } else {
+                                repoList.innerHTML = `
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>仓库名称</th>
+                                                <th>Codename</th>
+                                                <th>状态</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.repos.map(repo => `
+                                                <tr>
+                                                    <td>${repo.name}</td>
+                                                    <td>${repo.codename}</td>
+                                                    <td><span class="status-badge active">活跃</span></td>
+                                                    <td>
+                                                        <button class="btn btn-danger" onclick="deleteRepo('${repo.name}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">删除</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                `;
+                            }
+                        }
+                        
+                        // 更新上传仓库选择器
+                        if (uploadRepoSelect) {
+                            if (data.repos.length === 0) {
+                                uploadRepoSelect.innerHTML = '<option value="">暂无仓库</option>';
+                            } else {
+                                uploadRepoSelect.innerHTML = data.repos.map(repo => 
+                                    `<option value="${repo.name}">${repo.name} (${repo.codename})</option>`
+                                ).join('');
+                            }
+                        }
+                        
+                        // 更新包管理仓库选择器
+                        if (packageRepoSelect) {
+                            if (data.repos.length === 0) {
+                                packageRepoSelect.innerHTML = '<option value="">暂无仓库</option>';
+                            } else {
+                                packageRepoSelect.innerHTML = data.repos.map(repo => 
+                                    `<option value="${repo.name}">${repo.name} (${repo.codename})</option>`
+                                ).join('');
+                            }
+                        }
+                    } else {
+                        if (repoList) {
+                            repoList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">加载失败</p>';
+                        }
+                        if (uploadRepoSelect) {
+                            uploadRepoSelect.innerHTML = '<option value="">加载失败</option>';
+                        }
+                        if (packageRepoSelect) {
+                            packageRepoSelect.innerHTML = '<option value="">加载失败</option>';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('加载仓库列表错误:', error);
+                    if (repoList) {
+                        repoList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">加载失败</p>';
+                    }
+                    if (uploadRepoSelect) {
+                        uploadRepoSelect.innerHTML = '<option value="">加载失败</option>';
+                    }
+                    if (packageRepoSelect) {
+                        packageRepoSelect.innerHTML = '<option value="">加载失败</option>';
+                    }
+                });
+        }
+
+        // 创建仓库
+        function createRepo() {
+            const newRepoName = document.getElementById('newRepoName');
+            const newRepoCodename = document.getElementById('newRepoCodename');
+            
+            if (!newRepoName || !newRepoCodename) return;
+            
+            const name = newRepoName.value.trim();
+            const codename = newRepoCodename.value;
+            
+            if (!name) {
+                showMessage('请输入仓库名称', 'error');
+                return;
+            }
+            
+            fetch('/repos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, codename })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('仓库创建成功', 'success');
+                        newRepoName.value = '';
+                        loadRepoList();
+                    } else {
+                        showMessage('仓库创建失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('创建仓库错误:', error);
+                    showMessage('创建仓库过程中发生错误', 'error');
+                });
+        }
+
+        // 删除仓库
+        function deleteRepo(name) {
+            if (!confirm(`确定要删除仓库 ${name} 吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            fetch(`/repos/${name}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('仓库删除成功', 'success');
+                        loadRepoList();
+                    } else {
+                        showMessage('仓库删除失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除仓库错误:', error);
+                    showMessage('删除仓库过程中发生错误', 'error');
+                });
+        }
+
+        // 同步状态变量
+        let isSyncing = false;
+        let syncInterval = null;
+        
+        // 加载同步任务列表
+        function loadSyncTasks() {
+            const syncTaskList = document.getElementById('syncTaskList');
+            if (!syncTaskList) return;
+            
+            fetch('/mirrors/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.tasks && data.tasks.length > 0) {
+                        let html = '<table><thead><tr><th>任务ID</th><th>配置名称</th><th>状态</th><th>进度</th><th>开始时间</th><th>结束时间</th><th>操作</th></tr></thead><tbody>';
+                        data.tasks.forEach(task => {
+                            const statusClass = task.status === 'running' ? 'status-running' : 
+                                               task.status === 'paused' ? 'status-paused' :
+                                               task.status === 'completed' ? 'status-completed' :
+                                               task.status === 'failed' ? 'status-failed' : 'status-stopped';
+                            const statusText = task.status === 'running' ? '运行中' : 
+                                               task.status === 'paused' ? '已暂停' :
+                                               task.status === 'completed' ? '已完成' :
+                                               task.status === 'failed' ? '失败' : '已停止';
+                            const startTime = task.startTime ? new Date(task.startTime).toLocaleString() : '-';
+                            const endTime = task.endTime ? new Date(task.endTime).toLocaleString() : '-';
+                            
+                            html += `<tr>
+                                <td>${task.id}</td>
+                                <td>${task.configName || '-'}</td>
+                                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                                <td>${task.progress ? task.progress.toFixed(1) + '%' : '-'}</td>
+                                <td>${startTime}</td>
+                                <td>${endTime}</td>
+                                <td>
+                                    ${task.status === 'running' ? `<button class="btn btn-xs btn-warning" onclick="pauseTask('${task.id}')">暂停</button>` : ''}
+                                    ${task.status === 'paused' ? `<button class="btn btn-xs btn-success" onclick="resumeTask('${task.id}')">恢复</button>` : ''}
+                                    ${(task.status === 'running' || task.status === 'paused') ? `<button class="btn btn-xs btn-danger" onclick="stopTask('${task.id}')">停止</button>` : ''}
+                                </td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                        syncTaskList.innerHTML = html;
+                    } else {
+                        syncTaskList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">暂无同步任务记录</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载任务列表失败:', error);
+                    syncTaskList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">加载失败</p>';
+                });
+        }
+
+        // 暂停任务
+        function pauseTask(taskId) {
+            fetch('/mirrors/tasks/' + taskId + '/pause', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('任务已暂停', 'success');
+                        loadSyncStatus();
+                        loadSyncTasks();
+                    } else {
+                        showMessage('暂停失败: ' + data.error, 'error');
+                    }
+                });
+        }
+
+        // 恢复任务
+        function resumeTask(taskId) {
+            fetch('/mirrors/tasks/' + taskId + '/resume', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('任务已恢复', 'success');
+                        loadSyncStatus();
+                        loadSyncTasks();
+                    } else {
+                        showMessage('恢复失败: ' + data.error, 'error');
+                    }
+                });
+        }
+
+        // 停止任务
+        function stopTask(taskId) {
+            if (confirm('确定要停止此任务吗？')) {
+                fetch('/mirrors/tasks/' + taskId + '/stop', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showMessage('任务已停止', 'success');
+                            loadSyncStatus();
+                            loadSyncTasks();
+                        } else {
+                            showMessage('停止失败: ' + data.error, 'error');
+                        }
+                    });
+            }
+        }
+
         // 加载同步状态
         function loadSyncStatus() {
             fetch('/sync/status')
@@ -1262,6 +2095,131 @@ sudo apt install package-name`;
                         document.getElementById('syncStatusValue').textContent = data.status || '未同步';
                         document.getElementById('syncSource').textContent = data.source || '未设置';
                         document.getElementById('nextSyncTime').textContent = data.nextSyncTime || '未设置';
+                        
+                        // 检查是否有正在运行或暂停的同步任务，如果有则显示进度条
+                        const syncProgress = document.getElementById('syncProgress');
+                        const syncProgressBar = document.getElementById('syncProgressBar');
+                        const syncProgressText = document.getElementById('syncProgressText');
+                        const pauseSyncBtn = document.getElementById('pauseSyncBtn');
+                        const stopSyncBtn = document.getElementById('stopSyncBtn');
+                        
+                        if (data.status === 'running' || data.status === 'paused') {
+                            isSyncing = true;
+                            
+                            if (syncProgress) {
+                                syncProgress.classList.remove('hidden');
+                            }
+                            
+                            if (syncProgressBar && data.progress) {
+                                syncProgressBar.style.width = data.progress + '%';
+                            }
+                            
+                            if (syncProgressText) {
+                                syncProgressText.textContent = data.status === 'paused' ? '同步已暂停' : '正在同步...';
+                            }
+                            
+                            if (pauseSyncBtn) {
+                                pauseSyncBtn.style.display = 'inline-block';
+                                pauseSyncBtn.textContent = data.status === 'paused' ? '恢复同步' : '暂停同步';
+                            }
+                            
+                            if (stopSyncBtn) {
+                                stopSyncBtn.style.display = 'inline-block';
+                            }
+                            
+                            // 更新下载大小信息
+                            const syncSizeInfo = document.getElementById('syncSizeInfo');
+                            if (syncSizeInfo) {
+                                const downloadedSize = data.downloadedSize || 0;
+                                const totalSize = data.totalSize || 0;
+                                if (totalSize > 0) {
+                                    syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: ${totalSize.toFixed(2)} GiB`;
+                                } else {
+                                    syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: -- GiB`;
+                                }
+                            }
+                            
+                            // 更新文件数量信息
+                            const syncFileInfo = document.getElementById('syncFileInfo');
+                            if (syncFileInfo) {
+                                const downloadedFiles = data.downloadedFiles || 0;
+                                const totalFiles = data.totalFiles || 0;
+                                if (totalFiles > 0) {
+                                    syncFileInfo.textContent = `文件: ${downloadedFiles} / ${totalFiles}`;
+                                } else {
+                                    syncFileInfo.textContent = `文件: ${downloadedFiles} / --`;
+                                }
+                            }
+                            
+                            // 如果任务正在运行，继续轮询状态
+                            if (data.status === 'running') {
+                                // 先清除已存在的定时器，避免重复创建导致进度丢失
+                                if (syncInterval) {
+                                    clearInterval(syncInterval);
+                                    syncInterval = null;
+                                }
+                                syncInterval = setInterval(() => {
+                                    fetch('/sync/status')
+                                        .then(response => response.json())
+                                        .then(statusData => {
+                                            if (syncProgressBar && statusData.progress) {
+                                                syncProgressBar.style.width = statusData.progress + '%';
+                                            }
+                                            
+                                            // 更新下载大小信息
+                                            if (syncSizeInfo) {
+                                                const downloadedSize = statusData.downloadedSize || 0;
+                                                const totalSize = statusData.totalSize || 0;
+                                                if (totalSize > 0) {
+                                                    syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: ${totalSize.toFixed(2)} GiB`;
+                                                }
+                                            }
+                                            
+                                            // 更新文件数量信息
+                                            if (syncFileInfo) {
+                                                const downloadedFiles = statusData.downloadedFiles || 0;
+                                                const totalFiles = statusData.totalFiles || 0;
+                                                if (totalFiles > 0) {
+                                                    syncFileInfo.textContent = `文件: ${downloadedFiles} / ${totalFiles}`;
+                                                }
+                                            }
+                                            
+                                            if (statusData.status === 'completed') {
+                                                clearInterval(syncInterval);
+                                                syncInterval = null;
+                                                isSyncing = false;
+                                                if (syncProgress) {
+                                                    syncProgress.classList.add('hidden');
+                                                }
+                                                if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                                if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                                showMessage('同步任务已完成', 'success');
+                                                loadSyncStatus();
+                                                loadSyncTasks();
+                                            } else if (statusData.status === 'failed' || statusData.status === 'stopped') {
+                                                clearInterval(syncInterval);
+                                                syncInterval = null;
+                                                isSyncing = false;
+                                                if (syncProgress) {
+                                                    syncProgress.classList.add('hidden');
+                                                }
+                                                if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                                if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                                showMessage(statusData.status === 'stopped' ? '同步任务已停止' : '同步任务失败', 'error');
+                                                loadSyncStatus();
+                                                loadSyncTasks();
+                                            } else if (statusData.status === 'paused') {
+                                                if (syncProgressText) {
+                                                    syncProgressText.textContent = '同步已暂停';
+                                                }
+                                                if (pauseSyncBtn) {
+                                                    pauseSyncBtn.textContent = '恢复同步';
+                                                }
+                                            }
+                                        });
+                                }, 3000);
+                            }
+                        }
                     }
                 })
                 .catch(error => {
@@ -1269,57 +2227,697 @@ sudo apt install package-name`;
                 });
         }
 
-        // 开始同步
-        function startSync() {
-            const syncProgress = document.getElementById('syncProgress');
-            const syncProgressText = document.getElementById('syncProgressText');
+        // 全选镜像配置
+        function toggleSelectAllMirrors() {
+            const selectAll = document.getElementById('selectAllMirrors');
+            const checkboxes = document.querySelectorAll('.mirror-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        // 同步选中的镜像配置
+        function syncSelectedMirrors() {
+            const checkboxes = document.querySelectorAll('.mirror-checkbox:checked');
+            const selectedConfigs = Array.from(checkboxes).map(cb => cb.value);
             
-            if (syncProgress) {
-                syncProgress.classList.remove('hidden');
-                syncProgressText.textContent = '正在同步...';
+            if (selectedConfigs.length === 0) {
+                showMessage('请先选择要同步的镜像配置', 'warning');
+                return;
             }
             
-            fetch('/sync/start')
+            showMessage(`开始同步 ${selectedConfigs.length} 个配置...`, 'info');
+            
+            const syncProgress = document.getElementById('syncProgress');
+            const syncProgressText = document.getElementById('syncProgressText');
+            const syncProgressBar = document.getElementById('syncProgressBar');
+            const pauseSyncBtn = document.getElementById('pauseSyncBtn');
+            const stopSyncBtn = document.getElementById('stopSyncBtn');
+            
+            if (syncProgress) syncProgress.classList.remove('hidden');
+            if (pauseSyncBtn) {
+                pauseSyncBtn.style.display = 'inline-block';
+                pauseSyncBtn.textContent = '暂停同步';
+            }
+            if (stopSyncBtn) stopSyncBtn.style.display = 'inline-block';
+            
+            let currentIndex = 0;
+            // 使用全局的 syncInterval 变量，确保切换页面时能正确清除定时器
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+            isSyncing = true;
+            
+            function doSync(targetConfigName) {
+                if (syncProgressText) {
+                    syncProgressText.textContent = `正在同步 ${targetConfigName}... (${currentIndex + 1}/${selectedConfigs.length})`;
+                }
+                if (syncProgressBar) syncProgressBar.style.width = '0%';
+                
+                return fetch('/sync/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ configName: targetConfigName })
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showMessage('同步任务已开始', 'success');
+                        showMessage(`同步任务已开始: ${targetConfigName}`, 'success');
                         
-                        // 轮询同步状态
-                        const interval = setInterval(() => {
+                        syncInterval = setInterval(() => {
                             fetch('/sync/status')
                                 .then(response => response.json())
                                 .then(statusData => {
+                                    if (syncProgressBar && statusData.progress) {
+                                        syncProgressBar.style.width = statusData.progress + '%';
+                                    }
+                                    
+                                    const syncSizeInfo = document.getElementById('syncSizeInfo');
+                                    if (syncSizeInfo) {
+                                        const downloadedSize = statusData.downloadedSize || 0;
+                                        const totalSize = statusData.totalSize || 0;
+                                        if (totalSize > 0) {
+                                            syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: ${totalSize.toFixed(2)} GiB`;
+                                        }
+                                    }
+                                    
+                                    const syncFileInfo = document.getElementById('syncFileInfo');
+                                    if (syncFileInfo) {
+                                        const downloadedFiles = statusData.downloadedFiles || 0;
+                                        const totalFiles = statusData.totalFiles || 0;
+                                        if (totalFiles > 0) {
+                                            syncFileInfo.textContent = `文件: ${downloadedFiles} / ${totalFiles}`;
+                                        }
+                                    }
+                                    
                                     if (statusData.status === 'completed') {
-                                        clearInterval(interval);
-                                        if (syncProgress) {
-                                            syncProgress.classList.add('hidden');
+                                        if (syncInterval) {
+                                            clearInterval(syncInterval);
+                                            syncInterval = null;
                                         }
-                                        showMessage('同步任务已完成', 'success');
-                                        loadSyncStatus();
-                                    } else if (statusData.status === 'failed') {
-                                        clearInterval(interval);
-                                        if (syncProgress) {
-                                            syncProgress.classList.add('hidden');
+                                        showMessage(`${targetConfigName} 同步完成`, 'success');
+                                        currentIndex++;
+                                        if (currentIndex < selectedConfigs.length) {
+                                            doSync(selectedConfigs[currentIndex]);
+                                        } else {
+                                            isSyncing = false;
+                                            if (syncProgress) syncProgress.classList.add('hidden');
+                                            if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                            if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                            showMessage('所有选中的配置同步完成', 'success');
+                                            loadSyncStatus();
+                                            loadSyncTasks();
                                         }
-                                        showMessage('同步任务失败', 'error');
-                                        loadSyncStatus();
+                                    } else if (statusData.status === 'failed' || statusData.status === 'stopped') {
+                                        if (syncInterval) {
+                                            clearInterval(syncInterval);
+                                            syncInterval = null;
+                                        }
+                                        showMessage(`${targetConfigName} 同步失败: ${statusData.status}`, 'error');
+                                        currentIndex++;
+                                        if (currentIndex < selectedConfigs.length) {
+                                            doSync(selectedConfigs[currentIndex]);
+                                        } else {
+                                            isSyncing = false;
+                                            if (syncProgress) syncProgress.classList.add('hidden');
+                                            if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                            if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                            loadSyncStatus();
+                                            loadSyncTasks();
+                                        }
+                                    } else if (statusData.status === 'paused') {
+                                        if (syncProgressText) {
+                                            syncProgressText.textContent = '同步已暂停';
+                                        }
+                                        if (pauseSyncBtn) {
+                                            pauseSyncBtn.textContent = '恢复同步';
+                                        }
                                     }
                                 });
                         }, 3000);
                     } else {
+                        showMessage(`启动 ${targetConfigName} 同步失败: ${data.error || data.message}`, 'error');
+                        currentIndex++;
+                        if (currentIndex < selectedConfigs.length) {
+                            doSync(selectedConfigs[currentIndex]);
+                        } else {
+                            isSyncing = false;
+                            if (syncProgress) syncProgress.classList.add('hidden');
+                            if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                            if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                        }
+                    }
+                });
+            }
+            
+            doSync(selectedConfigs[0]);
+        }
+
+        // 开始同步
+        function startSync(configName) {
+            // 防止重复点击
+            if (isSyncing) {
+                showMessage('同步任务正在进行中，请等待完成', 'warning');
+                return;
+            }
+            
+            isSyncing = true;
+            
+            const syncProgress = document.getElementById('syncProgress');
+            const syncProgressText = document.getElementById('syncProgressText');
+            const syncProgressBar = document.getElementById('syncProgressBar');
+            const pauseSyncBtn = document.getElementById('pauseSyncBtn');
+            const stopSyncBtn = document.getElementById('stopSyncBtn');
+            
+            if (syncProgress) {
+                syncProgress.classList.remove('hidden');
+                syncProgressText.textContent = configName ? `正在同步 ${configName}...` : '正在同步...';
+                if (syncProgressBar) {
+                    syncProgressBar.style.width = '0%';
+                }
+            }
+            
+            // 显示控制按钮
+            if (pauseSyncBtn) {
+                pauseSyncBtn.style.display = 'inline-block';
+                pauseSyncBtn.textContent = '暂停同步';
+            }
+            if (stopSyncBtn) {
+                stopSyncBtn.style.display = 'inline-block';
+            }
+            
+            // 如果没有指定配置名称，获取第一个可用的镜像配置
+            function doSync(targetConfigName) {
+                fetch('/sync/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ configName: targetConfigName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage(`同步任务已开始: ${targetConfigName}`, 'success');
+                        
+                        // 更新进度文本
+                        if (syncProgressText) {
+                            syncProgressText.textContent = `正在同步 ${targetConfigName}...`;
+                        }
+                        
+                        // 轮询同步状态
+                        syncInterval = setInterval(() => {
+                            fetch('/sync/status')
+                                .then(response => response.json())
+                                .then(statusData => {
+                                    if (syncProgressBar && statusData.progress) {
+                                        syncProgressBar.style.width = statusData.progress + '%';
+                                    }
+                                    
+                                    // 更新下载大小信息
+                                    const syncSizeInfo = document.getElementById('syncSizeInfo');
+                                    if (syncSizeInfo) {
+                                        const downloadedSize = statusData.downloadedSize || 0;
+                                        const totalSize = statusData.totalSize || 0;
+                                        if (totalSize > 0) {
+                                            syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: ${totalSize.toFixed(2)} GiB`;
+                                        } else {
+                                            syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: -- GiB`;
+                                        }
+                                    }
+                                    
+                                    // 更新文件数量信息
+                                    const syncFileInfo = document.getElementById('syncFileInfo');
+                                    if (syncFileInfo) {
+                                        const downloadedFiles = statusData.downloadedFiles || 0;
+                                        const totalFiles = statusData.totalFiles || 0;
+                                        if (totalFiles > 0) {
+                                            syncFileInfo.textContent = `文件: ${downloadedFiles} / ${totalFiles}`;
+                                        } else {
+                                            syncFileInfo.textContent = `文件: ${downloadedFiles} / --`;
+                                        }
+                                    }
+                                    
+                                    if (statusData.status === 'completed') {
+                                        clearInterval(syncInterval);
+                                        syncInterval = null;
+                                        isSyncing = false;
+                                        if (syncProgress) {
+                                            syncProgress.classList.add('hidden');
+                                        }
+                                        if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                        if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                        showMessage('同步任务已完成', 'success');
+                                        loadSyncStatus();
+                                        loadSyncTasks();
+                                    } else if (statusData.status === 'failed' || statusData.status === 'stopped') {
+                                        clearInterval(syncInterval);
+                                        syncInterval = null;
+                                        isSyncing = false;
+                                        if (syncProgress) {
+                                            syncProgress.classList.add('hidden');
+                                        }
+                                        if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                        if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                        showMessage(statusData.status === 'stopped' ? '同步任务已停止' : '同步任务失败', 'error');
+                                        loadSyncStatus();
+                                        loadSyncTasks();
+                                    } else if (statusData.status === 'paused') {
+                                        if (syncProgressText) {
+                                            syncProgressText.textContent = '同步已暂停';
+                                        }
+                                        if (pauseSyncBtn) {
+                                            pauseSyncBtn.textContent = '恢复同步';
+                                        }
+                                    }
+                                });
+                        }, 3000);
+                    } else {
+                        isSyncing = false;
                         if (syncProgress) {
                             syncProgress.classList.add('hidden');
                         }
-                        showMessage('同步任务启动失败: ' + data.message, 'error');
+                        if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                        if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                        showMessage('同步任务启动失败: ' + (data.error || '未知错误'), 'error');
                     }
                 })
                 .catch(error => {
+                    isSyncing = false;
                     console.error('启动同步错误:', error);
                     if (syncProgress) {
                         syncProgress.classList.add('hidden');
                     }
+                    if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                    if (stopSyncBtn) stopSyncBtn.style.display = 'none';
                     showMessage('同步过程中发生错误', 'error');
+                });
+            }
+            
+            if (configName) {
+                doSync(configName);
+            } else {
+                fetch('/mirrors')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.mirrors && data.mirrors.length > 0) {
+                            doSync(data.mirrors[0].name);
+                        } else {
+                            isSyncing = false;
+                            if (syncProgress) {
+                                syncProgress.classList.add('hidden');
+                            }
+                            showMessage('暂无镜像配置，请先创建一个镜像配置', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        isSyncing = false;
+                        console.error('获取镜像配置错误:', error);
+                        if (syncProgress) {
+                            syncProgress.classList.add('hidden');
+                        }
+                        showMessage('获取镜像配置失败', 'error');
+                    });
+            }
+        }
+
+        // 暂停/恢复同步
+        function togglePauseSync() {
+            const pauseSyncBtn = document.getElementById('pauseSyncBtn');
+            const syncProgressText = document.getElementById('syncProgressText');
+            const syncProgressBar = document.getElementById('syncProgressBar');
+            
+            // 判断当前状态：按钮显示"恢复同步"表示当前是暂停状态，需要恢复
+            const isPaused = pauseSyncBtn && pauseSyncBtn.textContent === '恢复同步';
+            const url = isPaused ? '/sync/resume' : '/sync/pause';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    if (pauseSyncBtn) {
+                        pauseSyncBtn.textContent = isPaused ? '暂停同步' : '恢复同步';
+                    }
+                    if (syncProgressText) {
+                        syncProgressText.textContent = isPaused ? '正在同步...' : '同步已暂停';
+                    }
+                    
+                    // 如果是恢复同步，重新开始轮询进度
+                    if (isPaused) {
+                        syncInterval = setInterval(() => {
+                            fetch('/sync/status')
+                                .then(response => response.json())
+                                .then(statusData => {
+                                    if (syncProgressBar && statusData.progress) {
+                                        syncProgressBar.style.width = statusData.progress + '%';
+                                    }
+                                    
+                                    const syncSizeInfo = document.getElementById('syncSizeInfo');
+                                    if (syncSizeInfo) {
+                                        const downloadedSize = statusData.downloadedSize || 0;
+                                        const totalSize = statusData.totalSize || 0;
+                                        if (totalSize > 0) {
+                                            syncSizeInfo.textContent = `已下载: ${downloadedSize.toFixed(2)} GiB / 总计: ${totalSize.toFixed(2)} GiB`;
+                                        }
+                                    }
+                                    
+                                    const syncFileInfo = document.getElementById('syncFileInfo');
+                                    if (syncFileInfo) {
+                                        const downloadedFiles = statusData.downloadedFiles || 0;
+                                        const totalFiles = statusData.totalFiles || 0;
+                                        if (totalFiles > 0) {
+                                            syncFileInfo.textContent = `文件: ${downloadedFiles} / ${totalFiles}`;
+                                        }
+                                    }
+                                    
+                                    if (statusData.status === 'completed') {
+                                        clearInterval(syncInterval);
+                                        syncInterval = null;
+                                        isSyncing = false;
+                                        const syncProgress = document.getElementById('syncProgress');
+                                        if (syncProgress) syncProgress.classList.add('hidden');
+                                        if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                        const stopSyncBtn = document.getElementById('stopSyncBtn');
+                                        if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                        showMessage('同步任务已完成', 'success');
+                                        loadSyncStatus();
+                                        loadSyncTasks();
+                                    } else if (statusData.status === 'failed' || statusData.status === 'stopped') {
+                                        clearInterval(syncInterval);
+                                        syncInterval = null;
+                                        isSyncing = false;
+                                        const syncProgress = document.getElementById('syncProgress');
+                                        if (syncProgress) syncProgress.classList.add('hidden');
+                                        if (pauseSyncBtn) pauseSyncBtn.style.display = 'none';
+                                        const stopSyncBtn = document.getElementById('stopSyncBtn');
+                                        if (stopSyncBtn) stopSyncBtn.style.display = 'none';
+                                        showMessage(statusData.status === 'stopped' ? '同步任务已停止' : '同步任务失败', 'error');
+                                        loadSyncStatus();
+                                        loadSyncTasks();
+                                    } else if (statusData.status === 'paused') {
+                                        if (syncProgressText) {
+                                            syncProgressText.textContent = '同步已暂停';
+                                        }
+                                        if (pauseSyncBtn) {
+                                            pauseSyncBtn.textContent = '恢复同步';
+                                        }
+                                    }
+                                });
+                        }, 3000);
+                    }
+                } else {
+                    showMessage((isPaused ? '恢复' : '暂停') + '同步失败: ' + (data.error || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error((isPaused ? '恢复' : '暂停') + '同步错误:', error);
+                showMessage((isPaused ? '恢复' : '暂停') + '同步过程中发生错误', 'error');
+            });
+        }
+
+        // 停止同步
+        function stopSync() {
+            if (!confirm('确定要停止同步任务吗？这将终止当前同步操作，已下载的内容将被保留，但同步进度将被重置。')) {
+                return;
+            }
+            
+            const syncProgress = document.getElementById('syncProgress');
+            const pauseSyncBtn = document.getElementById('pauseSyncBtn');
+            const stopSyncBtn = document.getElementById('stopSyncBtn');
+            
+            fetch('/sync/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    isSyncing = false;
+                    if (syncInterval) {
+                        clearInterval(syncInterval);
+                        syncInterval = null;
+                    }
+                    if (syncProgress) {
+                        syncProgress.classList.add('hidden');
+                    }
+                    if (pauseSyncBtn) {
+                        pauseSyncBtn.style.display = 'none';
+                    }
+                    if (stopSyncBtn) {
+                        stopSyncBtn.style.display = 'none';
+                    }
+                    loadSyncStatus();
+                } else {
+                    showMessage('停止同步失败: ' + (data.error || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('停止同步错误:', error);
+                showMessage('停止同步过程中发生错误', 'error');
+            });
+        }
+
+        // 加载镜像配置列表
+        function loadMirrorConfigs() {
+            const mirrorConfigList = document.getElementById('mirrorConfigList');
+            
+            fetch('/mirrors')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.mirrors) {
+                        if (mirrorConfigList) {
+                            if (data.mirrors.length === 0) {
+                                mirrorConfigList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">暂无镜像配置</p>';
+                            } else {
+                                mirrorConfigList.innerHTML = `
+                                    <div style="margin-bottom: 1rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="checkbox" id="selectAllMirrors" onchange="toggleSelectAllMirrors()">
+                                            <span style="font-size: 0.875rem;">全选</span>
+                                        </label>
+                                    </div>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">选择</th>
+                                                <th>配置名称</th>
+                                                <th>Deb 行</th>
+                                                <th>带宽限制</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.mirrors.map(m => `
+                                                <tr>
+                                                    <td><input type="checkbox" class="mirror-checkbox" value="${m.name}"></td>
+                                                    <td>${m.name}</td>
+                                                    <td style="font-family: monospace; font-size: 0.85em;">${m.debLine || m.url || 'N/A'}</td>
+                                                    <td>${m.bandwidth || '无限制'}</td>
+                                                    <td>
+                                                        <button class="btn btn-success btn-xs" onclick="startSync('${m.name}')">同步</button>
+                                                        <button class="btn btn-primary btn-xs" onclick="editMirror('${m.name}')" style="margin-left: 0.25rem;">编辑</button>
+                                                        <button class="btn btn-danger btn-xs" onclick="deleteMirror('${m.name}')" style="margin-left: 0.25rem;">删除</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                `;
+                            }
+                        }
+                    } else {
+                        if (mirrorConfigList) {
+                            mirrorConfigList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">加载失败</p>';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('加载镜像配置错误:', error);
+                    if (mirrorConfigList) {
+                        mirrorConfigList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">加载失败</p>';
+                    }
+                });
+        }
+
+        // 编辑镜像配置
+        function editMirror(name) {
+            fetch('/mirrors')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.mirrors) {
+                        const mirror = data.mirrors.find(m => m.name === name);
+                        if (mirror) {
+                            document.getElementById('mirrorConfigName').value = mirror.name;
+                            document.getElementById('mirrorConfigName').readOnly = true;
+                            document.getElementById('mirrorDebLine').value = mirror.debLine || '';
+                            document.getElementById('mirrorBandwidth').value = mirror.bandwidth || '';
+                            document.getElementById('saveMirrorBtn').textContent = '更新配置';
+                            showMessage('请编辑镜像配置，然后点击"更新配置"保存', 'info');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取镜像配置错误:', error);
+                    showMessage('获取镜像配置失败', 'error');
+                });
+        }
+
+        // 保存镜像配置
+        function saveMirrorConfig() {
+            const name = document.getElementById('mirrorConfigName').value.trim();
+            const debLine = document.getElementById('mirrorDebLine').value.trim();
+            const bandwidth = document.getElementById('mirrorBandwidth').value.trim();
+            
+            if (!name) {
+                showMessage('请输入配置名称', 'error');
+                return;
+            }
+            
+            if (!debLine) {
+                showMessage('请输入 Deb 源地址', 'error');
+                return;
+            }
+            
+            // 验证 deb 格式
+            const debPattern = /^deb\s+(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s]+))\s+([\w.-]+)\s+.+$/;
+            if (!debPattern.test(debLine)) {
+                showMessage('Deb 格式不正确，格式应为: deb <url> <codename> <components>', 'error');
+                return;
+            }
+            
+            // 解析 deb 行，提取 url、codename 和 components
+            const debMatch = debLine.trim().match(/^deb\s+(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s]+))\s+([\w.-]+)\s+(.+)$/);
+            if (!debMatch) {
+                showMessage('Deb 格式不正确，格式应为: deb <url> <codename> <components>', 'error');
+                return;
+            }
+            
+            const url = debMatch[1] || debMatch[2] || debMatch[3] || debMatch[4];
+            const codename = debMatch[5];
+            const components = debMatch[6].split(/\s+/).filter(Boolean);
+            
+            const config = {
+                name: name,
+                url: url,
+                codename: codename,
+                components: components,
+                architectures: ['amd64', 'i386', 'arm64', 'loongarch64', 'source'],
+                bandwidth: bandwidth
+            };
+            
+            fetch('/mirrors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    if (!response.ok) {
+                        throw new Error('HTTP error, status = ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        showMessage('镜像配置保存成功', 'success');
+                        clearMirrorForm();
+                        loadMirrorConfigs();
+                    } else {
+                        showMessage('镜像配置保存失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('保存镜像配置错误:', error);
+                    showMessage('保存镜像配置过程中发生错误: ' + error.message, 'error');
+                });
+        }
+
+        // 清除镜像配置表单
+        function clearMirrorForm() {
+            document.getElementById('mirrorConfigName').value = '';
+            document.getElementById('mirrorConfigName').readOnly = false;
+            document.getElementById('mirrorDebLine').value = '';
+            document.getElementById('mirrorBandwidth').value = '';
+            document.getElementById('mirrorDownloadSource').checked = false;
+            document.getElementById('saveMirrorBtn').textContent = '保存配置';
+        }
+
+        // 取消编辑
+        function cancelMirrorEdit() {
+            clearMirrorForm();
+            showMessage('已取消编辑', 'info');
+        }
+
+        // 删除镜像配置
+        function deleteMirror(name) {
+            
+            const config = {
+                name: name,
+                url: url,
+                codename: codename,
+                components: components,
+                architectures: architectures
+            };
+            
+            fetch('/mirrors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('镜像配置添加成功', 'success');
+                        loadMirrorConfigs();
+                    } else {
+                        showMessage('镜像配置添加失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('添加镜像配置错误:', error);
+                    showMessage('添加镜像配置过程中发生错误', 'error');
+                });
+        }
+
+        // 删除镜像配置
+        function deleteMirror(name) {
+            if (!confirm(`确定要删除镜像配置 ${name} 吗？`)) {
+                return;
+            }
+            
+            fetch(`/mirrors/${name}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('镜像配置删除成功', 'success');
+                        loadMirrorConfigs();
+                    } else {
+                        showMessage('镜像配置删除失败: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除镜像配置错误:', error);
+                    showMessage('删除镜像配置过程中发生错误', 'error');
                 });
         }
 

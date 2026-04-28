@@ -8,23 +8,14 @@ RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib 
 RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free" >> /etc/apt/sources.list
 RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free" >> /etc/apt/sources.list
 
-RUN apt-get update && apt-get install -y \
-    reprepro \
-    gnupg2 \
-    apt-mirror \
-    cron \
-    curl \
-    wget \
-    net-tools \
-    iputils-ping \
-    dnsutils \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y reprepro gnupg2 apt-mirror cron curl wget net-tools iputils-ping dnsutils --no-install-recommends && rm -rf /var/lib/apt/lists/* && echo "Checking apt-mirror installation..." && which apt-mirror && apt-mirror --help | head -n 5
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+
+# 使用淘宝npm镜像源解决网络问题
+RUN npm config set registry https://registry.npmmirror.com && npm install
 
 COPY . .
 

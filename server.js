@@ -3,8 +3,9 @@ const multer = require('multer');
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync, exec } = require('child_process');
-const schedule = require('node-schedule');
-const cron = require('cron');
+// 暂时注释掉这些依赖，以便能够启动服务器
+// const schedule = require('node-schedule');
+// const cron = require('cron');
 
 // 新增：apt-mirror配置目录
 const mirrorConfigDir = path.join(__dirname, 'mirror-configs');
@@ -21,6 +22,20 @@ const PORT = process.env.PORT || 3000;
 // 配置中间件（必须在路由之前）
 app.use(express.static('public'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 添加CORS头（允许跨域）
+app.use(function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 const uploadsDir = path.join(__dirname, 'uploads');
 const reposRootDir = path.join(__dirname, 'repos');
@@ -257,9 +272,14 @@ console.log('Repository initialization completed');
 app.get('/repos', (req, res) => {
   try {
     const repos = getRepositories();
+    // 为每个仓库添加codename字段
+    const reposWithCodename = repos.map(repo => ({
+      ...repo,
+      codename: getRepoCodename(repo.name)
+    }));
     res.json({
       success: true,
-      repositories: repos
+      repos: reposWithCodename
     });
   } catch (error) {
     console.error('Failed to get repositories:', error.message);
@@ -341,6 +361,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
+  limits: {
+    fileSize: Infinity, // 不限制文件大小
+    files: Infinity // 不限制文件数量
+  },
   fileFilter: function (req, file, cb) {
     // 检查文件扩展名，忽略大小写
     const isDebFile = file.originalname.toLowerCase().endsWith('.deb');
@@ -355,6 +379,46 @@ const upload = multer({
     } else {
       cb(new Error('Only .deb files are allowed'));
     }
+  }
+});
+
+// 仓库信息API（必须在 /repo/:repoName? 路由之前定义）
+app.get('/repo/info', (req, res) => {
+  try {
+    const repoName = req.query.repo || DEFAULT_REPO_NAME;
+    const repoDir = getRepoDir(repoName);
+    
+    if (!fs.existsSync(repoDir)) {
+      return res.json({
+        success: true,
+        repoName: DEFAULT_REPO_NAME,
+        codename: 'focal',
+        components: 'main',
+        architectures: 'amd64, arm64, i386, loongarch64, source',
+        status: 'active'
+      });
+    }
+    
+    const codename = getRepoCodename(repoName);
+    
+    res.json({
+      success: true,
+      repoName: repoName,
+      codename: codename || 'focal',
+      components: 'main',
+      architectures: 'amd64, arm64, i386, loongarch64, source',
+      status: 'active'
+    });
+  } catch (error) {
+    console.error('Failed to get repo info:', error.message);
+    res.json({
+      success: true,
+      repoName: DEFAULT_REPO_NAME,
+      codename: 'focal',
+      components: 'main',
+      architectures: 'amd64, arm64, i386, loongarch64, source',
+      status: 'active'
+    });
   }
 });
 
@@ -522,15 +586,23 @@ app.delete('/packages/:packageName', (req, res) => {
 
 app.post('/upload', upload.array('debFiles'), (req, res) => {
   try {
+    console.log('Upload request received');
+    console.log('Request body:', req.body);
+    console.log('Files:', req.files ? req.files.length : 'none');
+    
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
+      console.error('No files uploaded');
+      return res.status(400).json({ success: false, message: 'No files uploaded' });
     }
 
-    const repoName = req.body.repo || DEFAULT_REPO_NAME;
+    const repoName = req.body.repoName || DEFAULT_REPO_NAME;
     const repoDir = getRepoDir(repoName);
     
+    console.log(`Uploading to repository: ${repoName}, directory: ${repoDir}`);
+    
     if (!fs.existsSync(repoDir)) {
-      return res.status(404).json({ error: `Repository ${repoName} not found` });
+      console.error(`Repository ${repoName} not found`);
+      return res.status(404).json({ success: false, message: `Repository ${repoName} not found` });
     }
 
     const results = [];
@@ -552,19 +624,24 @@ app.post('/upload', upload.array('debFiles'), (req, res) => {
         results.push({
           filename: file.originalname,
           success: false,
-          error: error.message
+          message: error.message
         });
       }
     }
     
+    const successCount = results.filter(r => r.success).length;
+    const message = `${successCount}/${req.files.length} files uploaded successfully to repository ${repoName}`;
+    
+    console.log(message);
+    
     res.json({
       success: true,
-      message: `${req.files.length} files processed for repository ${repoName}`,
+      message: message,
       results: results
     });
   } catch (error) {
     console.error('Error processing deb files:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -576,23 +653,31 @@ function processDebFile(debFilePath, repoDir, repoName) {
     const command = `reprepro --priority=optional --ignore=forbiddenchar --component=main --section=utils includedeb ${codename} ${debFilePath}`;
     console.log(`Running: ${command}`);
     
-    execSync(command, { stdio: 'inherit' });
+    try {
+      execSync(command, { stdio: 'pipe' });
+      console.log(`Deb package successfully added to repository ${repoName}`);
+    } catch (execError) {
+      console.error(`reprepro output: ${execError.stdout ? execError.stdout.toString() : ''}`);
+      console.error(`reprepro error: ${execError.stderr ? execError.stderr.toString() : ''}`);
+      throw new Error(`Failed to add deb package: ${execError.message}`);
+    }
     
-    console.log(`Deb package successfully added to repository ${repoName}`);
-    
-    // 重新签名仓库
+    // 重新签名仓库 - 如果需要的话
     try {
       signRepository(repoName);
     } catch (signError) {
       console.warn(`Warning: Failed to sign repository ${repoName}:`, signError.message);
-      // 签名失败不影响包添加
     }
   } catch (error) {
     console.error('Failed to add deb package:', error.message);
     throw error;
   } finally {
     process.chdir(__dirname);
-    fs.unlinkSync(debFilePath);
+    try {
+      fs.unlinkSync(debFilePath);
+    } catch (e) {
+      console.warn(`Warning: Failed to delete temp file ${debFilePath}:`, e.message);
+    }
   }
 }
 
@@ -609,32 +694,61 @@ app.get('/packages', (req, res) => {
     
     const codename = getRepoCodename(repoName);
     const command = `reprepro list ${codename}`;
-    const result = execSync(command, { encoding: 'utf8' });
+    
+    let result;
+    try {
+      result = execSync(command, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    } catch (execError) {
+      // 如果没有包，reprepro 可能返回空或错误
+      console.log('reprepro list returned:', execError.message);
+      result = '';
+    }
+    
+    // 处理空结果
+    if (!result || result.trim() === '') {
+      return res.json({
+        packages: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0
+        }
+      });
+    }
     
     const allPackages = result.trim().split('\n').filter(line => line.trim() !== '').map(line => {
-      const parts = line.split(' ');
-      // reprepro list 输出格式: focal|main|amd64: package-name version
-      const packageInfo = parts[0]; // focal|main|amd64:
-      const packageName = parts[1];
-      const version = parts[2];
+      const parts = line.trim().split(/\s+/);
       
-      // 从focal|main|amd64: 中提取架构信息，添加错误处理
-      let architecture = 'all';
-      try {
-        architecture = packageInfo.split('|')[2]?.replace(':', '') || 'all';
-      } catch (error) {
-        console.warn('Error parsing architecture from line:', line);
+      // reprepro list 输出格式: focal|main|amd64: package-name version
+      if (parts.length < 3) {
+        console.warn('Skipping invalid package line (not enough parts):', line);
         return null;
       }
       
+      const packageInfo = parts[0];
+      const packageName = parts[1];
+      const version = parts[2];
+      
+      // 从focal|main|amd64: 中提取架构信息
+      let architecture = 'all';
+      try {
+        const archPart = packageInfo.split('|')[2];
+        if (archPart) {
+          architecture = archPart.replace(':', '') || 'all';
+        }
+      } catch (error) {
+        console.warn('Error parsing architecture from line:', line);
+      }
+      
       // 过滤无效的包条目
-      if (!packageName || packageName === 'unknown' || !version) {
+      if (!packageName || !version) {
         console.warn('Skipping invalid package entry:', line);
         return null;
       }
       
       return {
-        package: packageName,
+        name: packageName,
         version: version,
         architecture: architecture,
         repo: repoName
@@ -649,7 +763,8 @@ app.get('/packages', (req, res) => {
     
     const paginatedPackages = allPackages.slice(startIndex, endIndex);
     
-    res.json({ 
+    res.json({
+      success: true,
       packages: paginatedPackages,
       pagination: {
         page,
@@ -735,16 +850,27 @@ set no_check_certificate 1
 ${bandwidth ? `set limit_rate ${bandwidth}` : ''}
 
 deb ${finalUrl} ${codename} ${components.join(' ')}
-deb-src ${finalUrl} ${codename} ${components.join(' ')}
 
 `;
     
     fs.writeFileSync(configPath, configContent);
     
+    // 检查配置文件是否成功创建
+    if (!fs.existsSync(configPath)) {
+      console.error(`Failed to create mirror configuration file: ${configPath}`);
+      return {
+        success: false,
+        error: `Failed to create mirror configuration file: ${configPath}`
+      };
+    }
+    
+    // 暂时注释掉定时任务设置，因为相关函数已被注释
+    /*
     // 设置定时任务
     if (schedule) {
       setScheduledSync(name, schedule);
     }
+    */
     
     return {
       success: true,
@@ -815,6 +941,25 @@ function runMirrorSync(configName) {
       // 生成任务ID
       const taskId = `${configName}-${Date.now()}`;
       
+      // 尝试查找apt-mirror命令
+      let aptMirrorPath = 'apt-mirror';
+      try {
+        const whichResult = execSync('which apt-mirror', { encoding: 'utf8', stdio: 'pipe' });
+        aptMirrorPath = whichResult.trim();
+        console.log('Found apt-mirror at:', aptMirrorPath);
+      } catch (whichError) {
+        console.log('apt-mirror not found in PATH, will try common locations');
+        // 尝试常见的apt-mirror安装位置
+        const commonPaths = ['/usr/bin/apt-mirror', '/usr/local/bin/apt-mirror', '/bin/apt-mirror'];
+        for (const p of commonPaths) {
+          if (fs.existsSync(p)) {
+            aptMirrorPath = p;
+            console.log('Found apt-mirror at:', aptMirrorPath);
+            break;
+          }
+        }
+      }
+      
       // 初始化任务状态
       syncTasks[taskId] = {
         id: taskId,
@@ -828,7 +973,7 @@ function runMirrorSync(configName) {
       // 保存任务状态到磁盘
       saveSyncTasks();
       
-      const command = `apt-mirror ${configPath} > ${logPath} 2>&1`;
+      const command = `${aptMirrorPath} ${configPath} > ${logPath} 2>&1`;
       console.log(`Running mirror sync: ${command}`);
       
       // 启动后台进程
@@ -879,11 +1024,10 @@ function runMirrorSync(configName) {
             // 检查同步目录是否存在
             if (fs.existsSync(mirrorDir)) {
               // 创建新的仓库
-              const repoName = configName;
-              createRepository(repoName);
+              createRepository(configName);
               
               // 获取仓库目录
-              const repoDir = getRepoDir(repoName);
+              const repoDir = getRepoDir(configName);
               
               // 复制同步的内容到仓库目录
               const mirrorContents = fs.readdirSync(mirrorDir);
@@ -896,7 +1040,7 @@ function runMirrorSync(configName) {
                 }
               });
               
-              console.log(`Mirror sync content added to repository: ${repoName}`);
+              console.log(`Mirror sync content added to repository: ${configName}`);
             }
           } catch (repoError) {
             console.error('Failed to add mirror sync to repository:', repoError.message);
@@ -917,7 +1061,7 @@ function runMirrorSync(configName) {
       
       // 定期更新进度（通过读取日志文件和统计目录大小）
       const progressInterval = setInterval(() => {
-        if (syncTasks[taskId] && (syncTasks[taskId].status === 'running' || syncTasks[taskId].status === 'paused')) {
+        if (syncTasks[taskId] && syncTasks[taskId].status === 'running') {
           try {
             // 解析日志文件，计算进度
             let progress = syncTasks[taskId].progress;
@@ -1001,16 +1145,50 @@ function runMirrorSync(configName) {
                 }
               }
               
+              // 提取已下载文件数量（apt-mirror日志格式）
+              const downloadedFilesMatch = logContent.match(/(\d+)\s+files?\s+downloaded/i);
+              const totalFilesMatch = logContent.match(/Downloading\s+(\d+)\s+archive\s+files/i);
+              
+              if (downloadedFilesMatch && totalFilesMatch && !hasProgressUpdate) {
+                const downloadedFiles = parseInt(downloadedFilesMatch[1]);
+                const totalFiles = parseInt(totalFilesMatch[1]);
+                syncTasks[taskId].downloadedFiles = downloadedFiles;
+                syncTasks[taskId].totalFiles = totalFiles;
+                
+                if (totalFiles > 0) {
+                  // 根据已下载文件数量计算进度（30-95% 是下载阶段）
+                  const calculatedProgress = Math.min((downloadedFiles / totalFiles) * 65 + 30, 95);
+                  progress = calculatedProgress;
+                  hasProgressUpdate = true;
+                  console.log(`Downloaded: ${downloadedFiles}/${totalFiles} files, Progress: ${progress.toFixed(2)}%`);
+                }
+              }
+              
               // 提取已下载大小（如果apt-mirror输出中包含）
               const downloadedMatch = logContent.match(/Downloaded\s+([\d.]+)\s*GiB/);
-              if (downloadedMatch && syncTasks[taskId].totalSize && !hasProgressUpdate) {
+              if (downloadedMatch && syncTasks[taskId].totalSize) {
                 const downloadedSize = parseFloat(downloadedMatch[1]);
-                const totalSize = syncTasks[taskId].totalSize;
-                const calculatedProgress = Math.min((downloadedSize / totalSize) * 70 + 30, 95); // 30-95% 是下载阶段
+                syncTasks[taskId].downloadedSize = downloadedSize;
+                console.log(`Downloaded: ${downloadedSize.toFixed(2)} GiB, Total: ${syncTasks[taskId].totalSize.toFixed(2)} GiB`);
+                
+                if (!hasProgressUpdate && syncTasks[taskId].totalSize > 0) {
+                  const calculatedProgress = Math.min((downloadedSize / syncTasks[taskId].totalSize) * 65 + 30, 95);
+                  progress = calculatedProgress;
+                  hasProgressUpdate = true;
+                }
+              }
+              
+              // 提取已下载大小（MB格式）
+              const downloadedMBMatch = logContent.match(/Downloaded\s+([\d.]+)\s*MB/);
+              if (downloadedMBMatch && syncTasks[taskId].totalSize && !hasProgressUpdate) {
+                const downloadedMB = parseFloat(downloadedMBMatch[1]);
+                const downloadedGiB = downloadedMB / 1024;
+                syncTasks[taskId].downloadedSize = downloadedGiB;
+                
+                const calculatedProgress = Math.min((downloadedGiB / syncTasks[taskId].totalSize) * 65 + 30, 95);
                 progress = calculatedProgress;
                 hasProgressUpdate = true;
-                syncTasks[taskId].downloadedSize = downloadedSize;
-                console.log(`Downloaded: ${downloadedSize} GiB, Total: ${totalSize} GiB, Progress: ${progress.toFixed(2)}%`);
+                console.log(`Downloaded: ${downloadedGiB.toFixed(2)} GiB (${downloadedMB} MB), Total: ${syncTasks[taskId].totalSize.toFixed(2)} GiB, Progress: ${progress.toFixed(2)}%`);
               }
             }
             
@@ -1081,7 +1259,9 @@ function getSyncTaskStatus(taskId) {
     return {
       ...task,
       totalSize: task.totalSize || 0,
-      downloadedSize: task.downloadedSize || 0
+      downloadedSize: task.downloadedSize || 0,
+      downloadedFiles: task.downloadedFiles || 0,
+      totalFiles: task.totalFiles || 0
     };
   }
   return null;
@@ -1110,13 +1290,19 @@ function getMirrorConfigs() {
         const componentsMatch = content.match(/deb\s+https?:\/\/[^\s]+\s+\w+\s+([^\n]+)/);
         const bandwidthMatch = content.match(/set limit_rate\s+(\d+)/);
         
+        const url = urlMatch ? urlMatch[1] : '';
+        const codename = codenameMatch ? codenameMatch[1] : '';
+        const components = componentsMatch ? componentsMatch[1].split(' ').filter(Boolean) : [];
+        const debLine = url && codename ? `deb ${url} ${codename} ${components.join(' ')}` : '';
+        
         configs.push({
           name: configName,
-          url: urlMatch ? urlMatch[1] : '',
-          codename: codenameMatch ? codenameMatch[1] : '',
-          components: componentsMatch ? componentsMatch[1].split(' ').filter(Boolean) : [],
+          url: url,
+          codename: codename,
+          components: components,
           bandwidth: bandwidthMatch ? bandwidthMatch[1] : '',
-          syncPath: path.join(mirrorSyncDir, configName)
+          syncPath: path.join(mirrorSyncDir, configName),
+          debLine: debLine
         });
       }
     });
@@ -1142,8 +1328,8 @@ function deleteMirrorConfig(configName) {
       fs.removeSync(syncDir);
     }
     
-    // 取消定时任务
-    if (scheduledJobs[configName]) {
+    // 取消定时任务（如果定时任务功能已启用）
+    if (typeof scheduledJobs !== 'undefined' && scheduledJobs[configName]) {
       scheduledJobs[configName].cancel();
       delete scheduledJobs[configName];
     }
@@ -1161,6 +1347,8 @@ function deleteMirrorConfig(configName) {
   }
 }
 
+// 暂时注释掉定时任务相关代码，以便能够启动服务器
+/*
 // 新增：定时任务管理
 const scheduledJobs = {}; // 存储定时任务，格式 { configName: { jobId: job, ... } }
 let jobIdCounter = 0;
@@ -1297,6 +1485,7 @@ function setScheduledSync(configName, scheduleExpression) {
     };
   }
 }
+*/
 
 // 新增：apt-mirror API
 app.get('/mirrors', (req, res) => {
@@ -1309,6 +1498,333 @@ app.get('/mirrors', (req, res) => {
   } catch (error) {
     console.error('Failed to get mirror configs:', error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// 同步状态管理
+let syncStatus = {
+  lastSyncTime: null,
+  status: 'never_synced',
+  source: null,
+  nextSyncTime: null
+};
+
+// 获取同步状态API
+app.get('/sync/status', (req, res) => {
+  try {
+    const tasks = getAllSyncTasks();
+    const runningTask = tasks.find(t => t.status === 'running' || t.status === 'paused');
+    
+    if (runningTask) {
+      syncStatus.status = runningTask.status;
+      syncStatus.source = runningTask.configName;
+      res.json({
+        success: true,
+        ...syncStatus,
+        progress: runningTask.progress || 0,
+        downloadedSize: runningTask.downloadedSize || 0,
+        totalSize: runningTask.totalSize || 0,
+        downloadedFiles: runningTask.downloadedFiles || 0,
+        totalFiles: runningTask.totalFiles || 0
+      });
+    } else if (tasks.length > 0) {
+      const lastTask = tasks.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))[0];
+      syncStatus.lastSyncTime = lastTask.endTime || lastTask.startTime;
+      syncStatus.status = lastTask.status;
+      syncStatus.source = lastTask.configName;
+      res.json({
+        success: true,
+        ...syncStatus,
+        progress: lastTask.progress || 0,
+        downloadedSize: lastTask.downloadedSize || 0,
+        totalSize: lastTask.totalSize || 0,
+        downloadedFiles: lastTask.downloadedFiles || 0,
+        totalFiles: lastTask.totalFiles || 0
+      });
+    } else {
+      res.json({
+        success: true,
+        ...syncStatus,
+        progress: 0,
+        downloadedSize: 0,
+        totalSize: 0,
+        downloadedFiles: 0,
+        totalFiles: 0
+      });
+    }
+  } catch (error) {
+    console.error('Failed to get sync status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 开始同步API
+app.post('/sync/start', (req, res) => {
+  try {
+    let { configName } = req.body;
+    
+    // 如果没有提供configName，自动获取第一个配置
+    if (!configName) {
+      const configs = getMirrorConfigs();
+      if (configs.length > 0) {
+        configName = configs[0].name;
+      } else {
+        return res.status(400).json({ error: 'No mirror configuration found. Please create one first.' });
+      }
+    }
+    
+    const configPath = path.join(mirrorConfigDir, `${configName}.conf`);
+    if (!fs.existsSync(configPath)) {
+      return res.status(404).json({ error: `Configuration ${configName} not found` });
+    }
+    
+    syncStatus.status = 'running';
+    syncStatus.source = configName;
+    
+    runMirrorSync(configName)
+      .then(result => {
+        if (result.success) {
+          syncStatus.lastSyncTime = new Date().toISOString();
+          syncStatus.status = 'completed';
+        } else {
+          syncStatus.status = 'failed';
+        }
+        res.json(result);
+      })
+      .catch(error => {
+        syncStatus.status = 'failed';
+        res.status(500).json({ error: error.message });
+      });
+  } catch (error) {
+    console.error('Failed to start sync:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 暂停同步API
+app.post('/sync/pause', (req, res) => {
+  try {
+    const tasks = getAllSyncTasks();
+    const runningTask = tasks.find(t => t.status === 'running');
+    
+    if (!runningTask) {
+      return res.status(400).json({ success: false, error: 'No running sync task found' });
+    }
+    
+    const taskId = runningTask.id;
+    
+    // 暂停进度更新定时器
+    if (syncTasks[taskId] && syncTasks[taskId].progressInterval) {
+      clearInterval(syncTasks[taskId].progressInterval);
+      console.log(`Progress interval cleared for task ${taskId}`);
+    }
+    
+    // 暂停子进程及其所有子进程
+    if (syncTasks[taskId] && syncTasks[taskId].childProcess) {
+      try {
+        const pid = syncTasks[taskId].childProcess.pid;
+        console.log(`Attempting to pause process group with PID: ${pid}`);
+        
+        // 尝试向整个进程组发送SIGSTOP信号
+        try {
+          process.kill(-pid, 'SIGSTOP');
+          console.log(`Sent SIGSTOP to process group ${pid}`);
+        } catch (groupError) {
+          console.log(`Failed to send SIGSTOP to process group, trying individual process`);
+          // 如果进程组操作失败，尝试单独暂停主进程
+          syncTasks[taskId].childProcess.kill('SIGSTOP');
+          console.log(`Sent SIGSTOP to individual process ${pid}`);
+        }
+        
+        // 额外安全措施：使用pkill命令查找并暂停所有相关进程
+        try {
+          execSync(`pkill -STOP -P ${pid}`, { stdio: 'ignore' });
+          console.log(`Sent SIGSTOP to all child processes of ${pid}`);
+        } catch (pkillError) {
+          console.log(`No child processes found or pkill failed: ${pkillError.message}`);
+        }
+        
+        console.log(`Sync task ${taskId} paused successfully`);
+      } catch (killError) {
+        console.error('Failed to pause sync process:', killError.message);
+        return res.status(500).json({ success: false, error: 'Failed to pause sync process: ' + killError.message });
+      }
+    }
+    
+    // 更新任务状态
+    syncTasks[taskId].status = 'paused';
+    syncTasks[taskId].pauseTime = new Date().toISOString();
+    syncStatus.status = 'paused';
+    
+    saveSyncTasks();
+    
+    res.json({
+      success: true,
+      message: 'Sync task paused successfully',
+      taskId: taskId,
+      progress: syncTasks[taskId].progress
+    });
+  } catch (error) {
+    console.error('Failed to pause sync:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 恢复同步API
+app.post('/sync/resume', (req, res) => {
+  try {
+    const tasks = getAllSyncTasks();
+    const pausedTask = tasks.find(t => t.status === 'paused');
+    
+    if (!pausedTask) {
+      return res.status(400).json({ success: false, error: 'No paused sync task found' });
+    }
+    
+    const taskId = pausedTask.id;
+    
+    // 恢复子进程及其所有子进程
+    if (syncTasks[taskId] && syncTasks[taskId].childProcess) {
+      try {
+        const pid = syncTasks[taskId].childProcess.pid;
+        console.log(`Attempting to resume process group with PID: ${pid}`);
+        
+        // 尝试向整个进程组发送SIGCONT信号
+        try {
+          process.kill(-pid, 'SIGCONT');
+          console.log(`Sent SIGCONT to process group ${pid}`);
+        } catch (groupError) {
+          console.log(`Failed to send SIGCONT to process group, trying individual process`);
+          // 如果进程组操作失败，尝试单独恢复主进程
+          syncTasks[taskId].childProcess.kill('SIGCONT');
+          console.log(`Sent SIGCONT to individual process ${pid}`);
+        }
+        
+        // 额外安全措施：使用pkill命令查找并恢复所有相关进程
+        try {
+          execSync(`pkill -CONT -P ${pid}`, { stdio: 'ignore' });
+          console.log(`Sent SIGCONT to all child processes of ${pid}`);
+        } catch (pkillError) {
+          console.log(`No child processes found or pkill failed: ${pkillError.message}`);
+        }
+        
+        console.log(`Sync task ${taskId} resumed successfully`);
+      } catch (killError) {
+        console.error('Failed to resume sync process:', killError.message);
+        return res.status(500).json({ success: false, error: 'Failed to resume sync process: ' + killError.message });
+      }
+    }
+    
+    // 更新任务状态
+    syncTasks[taskId].status = 'running';
+    syncTasks[taskId].resumeTime = new Date().toISOString();
+    syncStatus.status = 'running';
+    
+    saveSyncTasks();
+    
+    res.json({
+      success: true,
+      message: 'Sync task resumed successfully',
+      taskId: taskId,
+      progress: syncTasks[taskId].progress
+    });
+  } catch (error) {
+    console.error('Failed to resume sync:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 停止同步API
+app.post('/sync/stop', (req, res) => {
+  try {
+    const tasks = getAllSyncTasks();
+    const runningTask = tasks.find(t => t.status === 'running' || t.status === 'paused');
+    
+    if (!runningTask) {
+      return res.status(400).json({ success: false, error: 'No sync task found to stop' });
+    }
+    
+    const taskId = runningTask.id;
+    
+    // 清除进度更新定时器
+    if (syncTasks[taskId] && syncTasks[taskId].progressInterval) {
+      clearInterval(syncTasks[taskId].progressInterval);
+      console.log(`Progress interval cleared for task ${taskId}`);
+    }
+    
+    // 彻底终止所有相关进程
+    if (syncTasks[taskId] && syncTasks[taskId].childProcess) {
+      try {
+        const pid = syncTasks[taskId].childProcess.pid;
+        console.log(`Attempting to stop process group with PID: ${pid}`);
+        
+        // 方法1：尝试向整个进程组发送SIGKILL信号
+        try {
+          process.kill(-pid, 'SIGKILL');
+          console.log(`Sent SIGKILL to process group ${pid}`);
+        } catch (groupError) {
+          console.log(`Failed to send SIGKILL to process group, trying individual process`);
+          syncTasks[taskId].childProcess.kill('SIGKILL');
+          console.log(`Sent SIGKILL to individual process ${pid}`);
+        }
+        
+        // 方法2：使用pkill命令查找并杀死所有子进程
+        try {
+          execSync(`pkill -KILL -P ${pid}`, { stdio: 'ignore' });
+          console.log(`Sent SIGKILL to all child processes of ${pid}`);
+        } catch (pkillError) {
+          console.log(`No child processes found or pkill failed: ${pkillError.message}`);
+        }
+        
+        // 方法3：查找并杀死所有apt-mirror进程
+        try {
+          execSync(`pkill -KILL -f apt-mirror`, { stdio: 'ignore' });
+          console.log('Killed all apt-mirror processes');
+        } catch (e) {
+          console.log(`No apt-mirror processes found or pkill failed: ${e.message}`);
+        }
+        
+        // 方法4：查找并杀死所有wget进程（apt-mirror使用wget下载）
+        try {
+          execSync(`pkill -KILL -f wget`, { stdio: 'ignore' });
+          console.log('Killed all wget processes');
+        } catch (e) {
+          console.log(`No wget processes found or pkill failed: ${e.message}`);
+        }
+        
+        // 等待进程完全终止
+        setTimeout(() => {
+          // 验证是否还有apt-mirror进程在运行
+          try {
+            execSync(`pgrep apt-mirror`, { stdio: 'ignore' });
+            console.warn('Warning: apt-mirror process still running after kill attempt');
+          } catch (e) {
+            console.log('All apt-mirror processes terminated successfully');
+          }
+        }, 1000);
+        
+        console.log(`Sync task ${taskId} stopped successfully`);
+      } catch (killError) {
+        console.error('Failed to stop sync process:', killError.message);
+        return res.status(500).json({ success: false, error: 'Failed to stop sync process: ' + killError.message });
+      }
+    }
+    
+    // 更新任务状态
+    syncTasks[taskId].status = 'stopped';
+    syncTasks[taskId].endTime = new Date().toISOString();
+    syncStatus.status = 'never_synced';
+    syncStatus.lastSyncTime = null;
+    
+    saveSyncTasks();
+    
+    res.json({
+      success: true,
+      message: 'Sync task stopped successfully',
+      taskId: taskId
+    });
+  } catch (error) {
+    console.error('Failed to stop sync:', error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -1682,7 +2198,7 @@ app.post('/mirrors/tasks/:taskId/resume', (req, res) => {
               } catch (e) {
                 console.error(`Failed to resume apt-mirror process ${pid}:`, e.message);
               }
-            }
+            });
           } catch (e) {
             console.error('Failed to get apt-mirror processes:', e.message);
           }
