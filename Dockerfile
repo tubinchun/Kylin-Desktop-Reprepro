@@ -10,6 +10,9 @@ RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-secu
 
 RUN apt-get update && apt-get install -y reprepro gnupg2 apt-mirror cron curl wget net-tools iputils-ping dnsutils --no-install-recommends && rm -rf /var/lib/apt/lists/* && echo "Checking apt-mirror installation..." && which apt-mirror && apt-mirror --help | head -n 5
 
+# 创建 apt-mirror 需要的目录并设置权限
+RUN mkdir -p /var/spool/apt-mirror && chmod -R 777 /var/spool/apt-mirror
+
 WORKDIR /app
 
 COPY package*.json ./

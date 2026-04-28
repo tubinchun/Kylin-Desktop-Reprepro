@@ -961,6 +961,25 @@ function runMirrorSync(configName) {
         return;
       }
       
+      // 确保apt-mirror需要的目录存在并具有正确的权限
+      const aptMirrorSpoolDir = '/var/spool/apt-mirror';
+      if (!fs.existsSync(aptMirrorSpoolDir)) {
+        console.log(`Creating apt-mirror spool directory: ${aptMirrorSpoolDir}`);
+        try {
+          fs.mkdirSync(aptMirrorSpoolDir, { recursive: true });
+          // 尝试设置权限（仅在Linux环境下有效）
+          try {
+            fs.chmodSync(aptMirrorSpoolDir, 0o777);
+          } catch (chmodError) {
+            console.log(`Warning: Could not set permissions on ${aptMirrorSpoolDir}: ${chmodError.message}`);
+          }
+        } catch (mkdirError) {
+          console.error(`Failed to create apt-mirror spool directory ${aptMirrorSpoolDir}: ${mkdirError.message}`);
+          reject(new Error(`无法创建apt-mirror工作目录: ${mkdirError.message}`));
+          return;
+        }
+      }
+      
       // 生成任务ID
       const taskId = `${configName}-${Date.now()}`;
       
