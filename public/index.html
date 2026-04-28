@@ -49,6 +49,44 @@
             padding: 1rem;
         }
 
+        /* 架构标签选择器 */
+        .architecture-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .architecture-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: var(--background-color);
+        }
+
+        .architecture-tag:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(var(--primary-color-rgb), 0.05);
+        }
+
+        .architecture-tag.selected {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .architecture-tag input[type="checkbox"] {
+            display: none;
+        }
+
+        .architecture-tag span {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
         /* 顶部导航栏 */
         .top-nav {
             background-color: var(--primary-color);
@@ -1163,6 +1201,27 @@ sudo apt install package-name
                         <label for="mirrorBandwidth" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">带宽限制 (可选)</label>
                         <input type="text" id="mirrorBandwidth" class="form-input" placeholder="例如: 100m 表示 100MB/s，不填则不限速" style="width: 100%;">
                     </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">架构选择 (点击选择/取消)</label>
+                        <div id="mirrorArchitectures" class="architecture-selector" style="display: flex; flex-wrap: gap: 0.5rem; gap: 0.5rem;">
+                            <label class="architecture-tag selected" data-value="amd64">
+                                <input type="checkbox" value="amd64" checked hidden>
+                                <span>amd64</span>
+                            </label>
+                            <label class="architecture-tag selected" data-value="arm64">
+                                <input type="checkbox" value="arm64" checked hidden>
+                                <span>arm64</span>
+                            </label>
+                            <label class="architecture-tag" data-value="i386">
+                                <input type="checkbox" value="i386" hidden>
+                                <span>i386</span>
+                            </label>
+                            <label class="architecture-tag selected" data-value="loongarch64">
+                                <input type="checkbox" value="loongarch64" checked hidden>
+                                <span>loongarch64</span>
+                            </label>
+                        </div>
+                    </div>
                     <div style="display: flex; gap: 1rem;">
                         <button class="btn btn-primary" id="saveMirrorBtn">保存配置</button>
                         <button class="btn btn-secondary" id="cancelMirrorBtn">取消</button>
@@ -1444,6 +1503,16 @@ sudo apt install package-name
                 });
             }
             
+            // 架构标签选择器点击事件
+            const architectureTags = document.querySelectorAll('.architecture-tag');
+            architectureTags.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    this.classList.toggle('selected', checkbox.checked);
+                });
+            });
+            
             // 加载镜像配置列表
             loadMirrorConfigs();
             
@@ -1467,16 +1536,23 @@ sudo apt install package-name
             
             console.log('uploadRepoSelect element:', uploadRepoSelect);
             console.log('uploadRepoSelect value:', uploadRepoSelect ? uploadRepoSelect.value : 'null');
+            console.log('uploadRepoSelect options:', uploadRepoSelect ? Array.from(uploadRepoSelect.options).map(o => ({value: o.value, text: o.text})) : 'null');
             
             // 获取选择的仓库
             const repoName = uploadRepoSelect ? uploadRepoSelect.value : '';
             
             console.log('Selected repoName:', repoName);
+            console.log('repoName is empty:', repoName === '');
+            console.log('repoName is undefined:', repoName === undefined);
+            console.log('repoName is null:', repoName === null);
             
             if (!repoName) {
+                console.error('repoName is empty or not selected');
                 showMessage('请先选择目标仓库', 'error');
                 return;
             }
+            
+            console.log('Repository selected successfully:', repoName);
             
             // 计算总文件大小
             const totalSize = Array.from(files).reduce((acc, file) => acc + file.size, 0);
@@ -2791,29 +2867,38 @@ sudo apt install package-name`;
             }
             
             // 验证 deb 格式
-            const debPattern = /^deb\s+(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s]+))\s+([\w.-]+)\s+.+$/;
+            console.log('Deb line to validate:', debLine);
+            const debPattern = /^deb\s+(.+?)\s+(\S+)\s+(.+)$/;
             if (!debPattern.test(debLine)) {
-                showMessage('Deb 格式不正确，格式应为: deb <url> <codename> <components>', 'error');
+                showMessage('Deb 格式不正确，格式应为: deb <url> <codename> <components>，例如: deb http://archive.kylinos.cn/kylin/KYLIN-ALL 10.1 main', 'error');
                 return;
             }
             
             // 解析 deb 行，提取 url、codename 和 components
-            const debMatch = debLine.trim().match(/^deb\s+(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s]+))\s+([\w.-]+)\s+(.+)$/);
+            const debMatch = debLine.trim().match(/^deb\s+(.+?)\s+(\S+)\s+(.+)$/);
             if (!debMatch) {
-                showMessage('Deb 格式不正确，格式应为: deb <url> <codename> <components>', 'error');
+                showMessage('Deb 格式不正确，格式应为: deb <url> <codename> <components>，例如: deb http://archive.kylinos.cn/kylin/KYLIN-ALL 10.1 main', 'error');
                 return;
             }
             
-            const url = debMatch[1] || debMatch[2] || debMatch[3] || debMatch[4];
-            const codename = debMatch[5];
-            const components = debMatch[6].split(/\s+/).filter(Boolean);
+            const url = debMatch[1];
+            const codename = debMatch[2];
+            const components = debMatch[3].split(/\s+/).filter(Boolean);
+            
+            // 获取用户选择的架构
+            const selectedArchitectures = Array.from(document.querySelectorAll('#mirrorArchitectures input[type="checkbox"]:checked')).map(cb => cb.value);
+            
+            if (selectedArchitectures.length === 0) {
+                showMessage('请至少选择一个架构', 'error');
+                return;
+            }
             
             const config = {
                 name: name,
                 url: url,
                 codename: codename,
                 components: components,
-                architectures: ['amd64', 'i386', 'arm64', 'loongarch64', 'source'],
+                architectures: selectedArchitectures,
                 bandwidth: bandwidth
             };
             
@@ -2856,6 +2941,18 @@ sudo apt install package-name`;
             document.getElementById('mirrorBandwidth').value = '';
             document.getElementById('mirrorDownloadSource').checked = false;
             document.getElementById('saveMirrorBtn').textContent = '保存配置';
+            
+            // 重置架构选择器为默认值（amd64, arm64, loongarch64）
+            const checkboxes = document.querySelectorAll('#mirrorArchitectures input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = ['amd64', 'arm64', 'loongarch64'].includes(cb.value);
+                const label = cb.parentElement;
+                if (cb.checked) {
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
+            });
         }
 
         // 取消编辑

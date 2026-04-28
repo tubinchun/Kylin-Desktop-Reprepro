@@ -600,9 +600,32 @@ app.post('/upload', upload.array('debFiles'), (req, res) => {
     
     console.log(`Uploading to repository: ${repoName}, directory: ${repoDir}`);
     
+    // 检查仓库目录是否存在
     if (!fs.existsSync(repoDir)) {
-      console.error(`Repository ${repoName} not found`);
+      console.error(`Repository ${repoName} not found at ${repoDir}`);
       return res.status(404).json({ success: false, message: `Repository ${repoName} not found` });
+    }
+    
+    // 检查必要的目录结构
+    const confDir = path.join(repoDir, 'conf');
+    const poolDir = path.join(repoDir, 'pool');
+    const distsDir = path.join(repoDir, 'dists');
+    
+    console.log(`Checking repository structure for ${repoName}:`);
+    console.log(`  - conf directory exists: ${fs.existsSync(confDir)}`);
+    console.log(`  - pool directory exists: ${fs.existsSync(poolDir)}`);
+    console.log(`  - dists directory exists: ${fs.existsSync(distsDir)}`);
+    
+    // 如果 pool 目录不存在，创建它
+    if (!fs.existsSync(poolDir)) {
+      console.log(`Creating pool directory for ${repoName}`);
+      fs.ensureDirSync(poolDir);
+    }
+    
+    // 如果 dists 目录不存在，创建它
+    if (!fs.existsSync(distsDir)) {
+      console.log(`Creating dists directory for ${repoName}`);
+      fs.ensureDirSync(distsDir);
     }
 
     const results = [];
