@@ -963,13 +963,17 @@ function runMirrorSync(configName) {
       
       // 确保apt-mirror需要的目录存在并具有正确的权限
       const aptMirrorSpoolDir = '/var/spool/apt-mirror';
+      console.log(`Checking apt-mirror spool directory: ${aptMirrorSpoolDir}`);
+      
       if (!fs.existsSync(aptMirrorSpoolDir)) {
-        console.log(`Creating apt-mirror spool directory: ${aptMirrorSpoolDir}`);
+        console.log(`Directory does not exist, creating: ${aptMirrorSpoolDir}`);
         try {
           fs.mkdirSync(aptMirrorSpoolDir, { recursive: true });
+          console.log(`Created directory: ${aptMirrorSpoolDir}`);
           // 尝试设置权限（仅在Linux环境下有效）
           try {
             fs.chmodSync(aptMirrorSpoolDir, 0o777);
+            console.log(`Set permissions to 777 on: ${aptMirrorSpoolDir}`);
           } catch (chmodError) {
             console.log(`Warning: Could not set permissions on ${aptMirrorSpoolDir}: ${chmodError.message}`);
           }
@@ -977,6 +981,22 @@ function runMirrorSync(configName) {
           console.error(`Failed to create apt-mirror spool directory ${aptMirrorSpoolDir}: ${mkdirError.message}`);
           reject(new Error(`无法创建apt-mirror工作目录: ${mkdirError.message}`));
           return;
+        }
+      } else {
+        console.log(`Directory already exists: ${aptMirrorSpoolDir}`);
+        // 检查目录权限
+        try {
+          const stats = fs.statSync(aptMirrorSpoolDir);
+          console.log(`Directory permissions: ${stats.mode.toString(8)}`);
+          // 尝试设置权限（仅在Linux环境下有效）
+          try {
+            fs.chmodSync(aptMirrorSpoolDir, 0o777);
+            console.log(`Updated permissions to 777 on: ${aptMirrorSpoolDir}`);
+          } catch (chmodError) {
+            console.log(`Warning: Could not set permissions on ${aptMirrorSpoolDir}: ${chmodError.message}`);
+          }
+        } catch (statError) {
+          console.error(`Failed to stat directory ${aptMirrorSpoolDir}: ${statError.message}`);
         }
       }
       
