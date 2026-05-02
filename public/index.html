@@ -3102,6 +3102,7 @@ sudo apt install package-name`;
 
         // 保存镜像配置
         function saveMirrorConfig() {
+            console.log('saveMirrorConfig called');
             const name = document.getElementById('mirrorConfigName').value.trim();
             const bandwidth = document.getElementById('mirrorBandwidth').value.trim();
 
@@ -3111,20 +3112,20 @@ sudo apt install package-name`;
             }
 
             // 获取所有 deb 源地址
-            const debLineInputs = document.querySelectorAll('.mirrorDebLine');
+            const debLineInputs = document.querySelectorAll('.deb-line-row .mirrorDebLine');
+            console.log('Found debLineInputs:', debLineInputs.length);
             const debLines = [];
             let hasEmpty = false;
 
             debLineInputs.forEach((input, index) => {
                 const value = input.value.trim();
+                console.log(`Input ${index}: "${value}"`);
                 if (value) {
                     debLines.push(value);
-                } else if (debLineInputs.length === 1) {
-                    hasEmpty = true;
                 }
             });
 
-            if (hasEmpty || debLines.length === 0) {
+            if (debLines.length === 0) {
                 showMessage('请输入 Deb 源地址', 'error');
                 return;
             }
