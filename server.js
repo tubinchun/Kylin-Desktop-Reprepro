@@ -925,6 +925,28 @@ function listDirectoryTree(dir, prefix) {
   });
 }
 
+// 清理镜像同步目录以节省空间
+function cleanupMirrorSyncDir(configName) {
+  try {
+    const syncDir = path.join(mirrorSyncDir, configName);
+    
+    if (!fs.existsSync(syncDir)) {
+      console.log(`镜像同步目录 ${syncDir} 不存在，无需清理`);
+      return;
+    }
+    
+    console.log(`正在清理镜像同步目录 ${syncDir} 以节省空间...`);
+    
+    // 删除同步目录下的所有内容
+    fs.removeSync(syncDir);
+    
+    console.log(`镜像同步目录 ${syncDir} 已成功清理`);
+  } catch (error) {
+    console.error(`清理镜像同步目录失败: ${error.message}`);
+    // 不影响同步成功的返回，继续执行
+  }
+}
+
 // 新增：apt-mirror配置管理
 function processUrl(originalUrl) {
   let processedUrl = originalUrl;
@@ -1299,6 +1321,9 @@ function runMirrorSync(configName) {
                 console.log(`pool directory: ${poolCheck}, exists: ${fs.existsSync(poolCheck)}`);
 
                 console.log(`Mirror sync content added to repository: ${configName}`);
+                
+                // 清理镜像同步目录以节省空间
+                cleanupMirrorSyncDir(configName);
               } else {
                 console.error(`Could not find dists and pool directories in ${mirrorDir}`);
                 // 列出完整目录树帮助调试
