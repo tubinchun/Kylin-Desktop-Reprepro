@@ -12,6 +12,11 @@ const mirrorConfigDir = path.join(__dirname, 'mirror-configs');
 const mirrorSyncDir = path.join(__dirname, 'mirror-syncs');
 const mirrorLogDir = path.join(__dirname, 'mirror-logs');
 
+// 同步超时配置（默认24小时，单位：毫秒）
+// 大型镜像同步可能需要数小时甚至数天，设置较长的超时时间
+// 用户可以通过环境变量 SYNC_TIMEOUT_MS 自定义超时时间
+const SYNC_TIMEOUT = process.env.SYNC_TIMEOUT_MS ? parseInt(process.env.SYNC_TIMEOUT_MS) : 24 * 60 * 60 * 1000; // 默认24小时
+
 fs.ensureDirSync(mirrorConfigDir);
 fs.ensureDirSync(mirrorSyncDir);
 fs.ensureDirSync(mirrorLogDir);
@@ -805,64 +810,82 @@ app.get('/packages', (req, res) => {
 });
 
 // 新增：apt-mirror配置管理
+function processUrl(originalUrl) {
+  let processedUrl = originalUrl;
+
+  // 移除URL中的重复斜杠
+  const urlParts = processedUrl.split('://');
+  if (urlParts.length === 2) {
+    const protocol = urlParts[0] + '://';
+    const rest = urlParts[1].replace(/\/+\//g, '/');
+    processedUrl = protocol + rest;
+  } else {
+    processedUrl = processedUrl.replace(/\/+\//g, '/');
+  }
+  // 确保URL以斜杠结束
+  if (processedUrl && !processedUrl.endsWith('/')) {
+    processedUrl += '/';
+  }
+
+  // 确保URL包含协议
+  if (!processedUrl.includes('://')) {
+    processedUrl = 'http://' + processedUrl;
+  }
+  // 再次确保没有重复斜杠
+  const finalUrlParts = processedUrl.split('://');
+  if (finalUrlParts.length === 2) {
+    const protocol = finalUrlParts[0] + '://';
+    const rest = finalUrlParts[1].replace(/\/+\//g, '/');
+    processedUrl = protocol + rest;
+  }
+  // 确保URL以斜杠结束
+  if (!processedUrl.endsWith('/')) {
+    processedUrl += '/';
+  }
+
+  return processedUrl;
+}
+
 function createMirrorConfig(config) {
   try {
-    const { name, url, codename, components, architectures, bandwidth, syncPath, schedule } = config;
-    
+    const { name, url, codename, components, architectures, bandwidth, syncPath, schedule, debLines } = config;
+
     const configPath = path.join(mirrorConfigDir, `${name}.conf`);
     const syncDir = path.join(mirrorSyncDir, name);
-    
+
     fs.ensureDirSync(syncDir);
-    
-    // 处理URL格式，确保格式正确
-    let processedUrl = url;
-    // 移除URL中的重复斜杠
-    const urlParts = processedUrl.split('://');
-    if (urlParts.length === 2) {
-      const protocol = urlParts[0] + '://';
-      const rest = urlParts[1].replace(/\/+\//g, '/');
-      processedUrl = protocol + rest;
+
+    // 对于 Docker 容器环境，使用容器内的绝对路径 /app/mirror-syncs/配置名
+    const containerSyncDir = `/app/mirror-syncs/${name}`;
+
+    let debLinesContent = '';
+    let firstCodename = codename;
+
+    // 处理多个 deb 源地址
+    if (debLines && Array.isArray(debLines) && debLines.length > 0) {
+      firstCodename = debLines[0].codename;
+
+      debLines.forEach((deb, index) => {
+        const processedUrl = processUrl(deb.url);
+        console.log(`Deb line ${index + 1} - Original URL: ${deb.url}, Processed URL: ${processedUrl}`);
+        debLinesContent += `deb ${processedUrl} ${deb.codename} ${deb.components.join(' ')}\n`;
+      });
     } else {
-      processedUrl = processedUrl.replace(/\/+\//g, '/');
+      // 处理单个 deb 源（兼容旧格式）
+      const processedUrl = processUrl(url);
+      console.log(`Original URL: ${url}`);
+      console.log(`Processed URL: ${processedUrl}`);
+      debLinesContent = `deb ${processedUrl} ${codename} ${components.join(' ')}\n`;
     }
-    // 确保URL以斜杠结束
-    if (processedUrl && !processedUrl.endsWith('/')) {
-      processedUrl += '/';
-    }
-    
-    // 调试：打印处理后的URL
-    console.log(`Original URL: ${url}`);
-    console.log(`Processed URL: ${processedUrl}`);
-    
-    // 确保URL格式完全正确
-    let finalUrl = processedUrl;
-    // 确保URL包含协议
-    if (!finalUrl.includes('://')) {
-      finalUrl = 'http://' + finalUrl;
-    }
-    // 再次确保没有重复斜杠
-    const finalUrlParts = finalUrl.split('://');
-    if (finalUrlParts.length === 2) {
-      const protocol = finalUrlParts[0] + '://';
-      const rest = finalUrlParts[1].replace(/\/+\//g, '/');
-      finalUrl = protocol + rest;
-    }
-    // 确保URL以斜杠结束
-    if (!finalUrl.endsWith('/')) {
-      finalUrl += '/';
-    }
-    
-    // 调试：打印最终URL
-    console.log(`Final URL: ${finalUrl}`);
-    
+
     const configContent = `
-set base_path ${syncDir}
-set mirror_path ${syncDir}/mirror
-set skel_path ${syncDir}/skel
-set var_path ${syncDir}/var
-set cleanscript ${syncDir}/clean.sh
+set base_path ${containerSyncDir}
+set mirror_path ${containerSyncDir}/mirror
+set skel_path ${containerSyncDir}/skel
+set var_path ${containerSyncDir}/var
+set cleanscript ${containerSyncDir}/clean.sh
 set defaultarch ${architectures[0] || 'amd64'}
-set postmirror_script ${syncDir}/postmirror.sh
+set postmirror_script ${containerSyncDir}/postmirror.sh
 set run_postmirror 0
 set nthreads 4
 set _tilde 0
@@ -872,12 +895,11 @@ set no_check_certificate 1
 
 ${bandwidth ? `set limit_rate ${bandwidth}` : ''}
 
-deb ${finalUrl} ${codename} ${components.join(' ')}
-
+${debLinesContent}
 `;
-    
+
     fs.writeFileSync(configPath, configContent);
-    
+
     // 检查配置文件是否成功创建
     if (!fs.existsSync(configPath)) {
       console.error(`Failed to create mirror configuration file: ${configPath}`);
@@ -886,7 +908,7 @@ deb ${finalUrl} ${codename} ${components.join(' ')}
         error: `Failed to create mirror configuration file: ${configPath}`
       };
     }
-    
+
     // 暂时注释掉定时任务设置，因为相关函数已被注释
     /*
     // 设置定时任务
@@ -894,19 +916,20 @@ deb ${finalUrl} ${codename} ${components.join(' ')}
       setScheduledSync(name, schedule);
     }
     */
-    
+
     return {
       success: true,
       message: `Mirror configuration ${name} created successfully`,
       config: {
         name,
-        url,
-        codename,
-        components,
+        url: url || debLines?.[0]?.url,
+        codename: codename || firstCodename,
+        components: components || debLines?.[0]?.components,
         architectures,
         bandwidth,
         syncPath: syncDir,
-        schedule
+        schedule,
+        debLines: debLines || null
       }
     };
   } catch (error) {
@@ -1277,33 +1300,40 @@ function runMirrorSync(configName) {
         }
       }, 5000);
       
-      // 添加任务超时机制
-      const timeoutId = setTimeout(() => {
-        if (syncTasks[taskId] && syncTasks[taskId].status === 'running') {
-          console.error('Mirror sync timeout after 30 minutes');
-          syncTasks[taskId].status = 'failed';
-          syncTasks[taskId].error = 'Sync operation timed out after 30 minutes';
-          syncTasks[taskId].endTime = new Date().toISOString();
-          
-          // 尝试终止子进程
-          try {
-            child.kill('SIGTERM');
-            console.log('Sync process terminated due to timeout');
-          } catch (killError) {
-            console.error('Failed to kill sync process:', killError.message);
+      // 添加任务超时机制（如果 SYNC_TIMEOUT <= 0 则不限制超时）
+      let timeoutId = null;
+      if (SYNC_TIMEOUT > 0) {
+        timeoutId = setTimeout(() => {
+          if (syncTasks[taskId] && syncTasks[taskId].status === 'running') {
+            console.error(`Mirror sync timeout after ${SYNC_TIMEOUT / 1000 / 60} minutes`);
+            syncTasks[taskId].status = 'failed';
+            syncTasks[taskId].error = `Sync operation timed out after ${SYNC_TIMEOUT / 1000 / 60} minutes`;
+            syncTasks[taskId].endTime = new Date().toISOString();
+
+            // 尝试终止子进程
+            try {
+              child.kill('SIGTERM');
+              console.log('Sync process terminated due to timeout');
+            } catch (killError) {
+              console.error('Failed to kill sync process:', killError.message);
+            }
+
+            resolve({
+              success: false,
+              error: `Sync operation timed out after ${SYNC_TIMEOUT / 1000 / 60} minutes`,
+              taskId
+            });
           }
-          
-          resolve({
-            success: false,
-            error: 'Sync operation timed out after 30 minutes',
-            taskId
-          });
-        }
-      }, 30 * 60 * 1000); // 30分钟超时
-      
+        }, SYNC_TIMEOUT);
+      } else {
+        console.log('Sync timeout is disabled (SYNC_TIMEOUT <= 0), sync will run until completion');
+      }
+
       // 清除超时定时器
       child.on('exit', () => {
-        clearTimeout(timeoutId);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
       });
       
     } catch (error) {
@@ -1339,36 +1369,62 @@ function getMirrorConfigs() {
   try {
     const configs = [];
     const files = fs.readdirSync(mirrorConfigDir);
-    
+
     files.forEach(file => {
       if (file.endsWith('.conf')) {
         const configName = file.replace('.conf', '');
         const configPath = path.join(mirrorConfigDir, file);
         const content = fs.readFileSync(configPath, 'utf8');
-        
-        // 解析配置文件
-        const urlMatch = content.match(/deb\s+(https?:\/\/[^\s]+)\s+/);
-        const codenameMatch = content.match(/deb\s+https?:\/\/[^\s]+\s+(\w+)\s+/);
-        const componentsMatch = content.match(/deb\s+https?:\/\/[^\s]+\s+\w+\s+([^\n]+)/);
+
+        // 解析配置文件 - 支持多个 deb 行
+        const debMatches = content.match(/^deb\s+(https?:\/\/[^\s]+)\s+(\w+)\s+([^\n]+)/gm);
         const bandwidthMatch = content.match(/set limit_rate\s+(\d+)/);
-        
-        const url = urlMatch ? urlMatch[1] : '';
-        const codename = codenameMatch ? codenameMatch[1] : '';
-        const components = componentsMatch ? componentsMatch[1].split(' ').filter(Boolean) : [];
-        const debLine = url && codename ? `deb ${url} ${codename} ${components.join(' ')}` : '';
-        
+
+        const debLines = [];
+        let firstUrl = '';
+        let firstCodename = '';
+        let firstComponents = [];
+
+        if (debMatches) {
+          debMatches.forEach((match, index) => {
+            const lineMatch = match.match(/^deb\s+(https?:\/\/[^\s]+)\s+(\w+)\s+([^\n]+)/);
+            if (lineMatch) {
+              const url = lineMatch[1];
+              const codename = lineMatch[2];
+              const components = lineMatch[3].split(' ').filter(Boolean);
+
+              debLines.push({
+                url: url,
+                codename: codename,
+                components: components
+              });
+
+              if (index === 0) {
+                firstUrl = url;
+                firstCodename = codename;
+                firstComponents = components;
+              }
+            }
+          });
+        }
+
+        const debLine = debLines.length > 0
+          ? debLines.map(d => `deb ${d.url} ${d.codename} ${d.components.join(' ')}`).join('\n')
+          : '';
+
         configs.push({
           name: configName,
-          url: url,
-          codename: codename,
-          components: components,
+          url: firstUrl,
+          codename: firstCodename,
+          components: firstComponents,
           bandwidth: bandwidthMatch ? bandwidthMatch[1] : '',
           syncPath: path.join(mirrorSyncDir, configName),
-          debLine: debLine
+          debLine: debLines.length > 0 ? `deb ${firstUrl} ${firstCodename} ${firstComponents.join(' ')}` : '',
+          debLines: debLines
         });
       }
     });
-    
+
     return configs;
   } catch (error) {
     console.error('Failed to get mirror configs:', error.message);
@@ -1616,6 +1672,25 @@ app.get('/sync/status', (req, res) => {
     }
   } catch (error) {
     console.error('Failed to get sync status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 获取同步任务列表API
+app.get('/sync/tasks', (req, res) => {
+  try {
+    const tasks = getAllSyncTasks();
+    // 移除 childProcess 引用，避免序列化问题
+    const tasksWithoutProcess = tasks.map(task => {
+      const { childProcess, ...taskWithoutProcess } = task;
+      return taskWithoutProcess;
+    });
+    res.json({
+      success: true,
+      tasks: tasksWithoutProcess
+    });
+  } catch (error) {
+    console.error('Failed to get sync tasks:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1893,17 +1968,37 @@ app.post('/sync/stop', (req, res) => {
 app.post('/mirrors', (req, res) => {
   try {
     const config = req.body;
-    
-    if (!config.name || !config.url || !config.codename || !config.components || !config.architectures) {
+
+    // 支持新的 debLines 格式（多个 deb 源）
+    if (config.debLines && Array.isArray(config.debLines) && config.debLines.length > 0) {
+      if (!config.name || !config.architectures) {
+        return res.status(400).json({ error: 'Missing required configuration parameters' });
+      }
+
+      // 验证所有 debLines 的 codename 是否一致
+      const codenames = [...new Set(config.debLines.map(d => d.codename))];
+      if (codenames.length > 1) {
+        return res.status(400).json({ error: 'All deb sources must have the same codename' });
+      }
+
+      const result = createMirrorConfig(config);
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } else if (!config.name || !config.url || !config.codename || !config.components || !config.architectures) {
+      // 兼容旧的单个 url/codename/components 格式
       return res.status(400).json({ error: 'Missing required configuration parameters' });
-    }
-    
-    const result = createMirrorConfig(config);
-    
-    if (result.success) {
-      res.json(result);
     } else {
-      res.status(500).json(result);
+      const result = createMirrorConfig(config);
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
     }
   } catch (error) {
     console.error('Failed to create mirror config:', error.message);

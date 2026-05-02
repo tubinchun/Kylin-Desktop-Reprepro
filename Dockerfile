@@ -3,10 +3,14 @@ FROM node:18
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 
-# 使用清华大学镜像源
-RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free" > /etc/apt/sources.list
-RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free" >> /etc/apt/sources.list
-RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free" >> /etc/apt/sources.list
+# 完全替换 sources.list，禁用所有其他源，使用清华大学镜像源并禁用Release文件时间检查
+RUN rm -f /etc/apt/sources.list && \
+    echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    mkdir -p /etc/apt/apt.conf.d && \
+    echo "Acquire::Check-Valid-Until \"false\";" > /etc/apt/apt.conf.d/99ignore-release-valid && \
+    echo "Acquire::AllowInsecureRepositories \"true\";" >> /etc/apt/apt.conf.d/99ignore-release-valid
 
 RUN apt-get update && apt-get install -y reprepro gnupg2 apt-mirror cron curl wget net-tools iputils-ping dnsutils --no-install-recommends && rm -rf /var/lib/apt/lists/* && echo "Checking apt-mirror installation..." && which apt-mirror && apt-mirror --help | head -n 5
 
