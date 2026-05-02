@@ -3218,7 +3218,10 @@ sudo apt install package-name`;
             addDebLineInput('', true);
 
             document.getElementById('mirrorBandwidth').value = '';
-            document.getElementById('mirrorDownloadSource').checked = false;
+            const downloadSource = document.getElementById('mirrorDownloadSource');
+            if (downloadSource) {
+                downloadSource.checked = false;
+            }
             document.getElementById('saveMirrorBtn').textContent = '保存配置';
 
             // 重置架构选择器为默认值（amd64, arm64, loongarch64）
