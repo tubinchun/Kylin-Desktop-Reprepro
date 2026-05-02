@@ -885,6 +885,46 @@ function readPackagesFromMirror(repoDir, distsDir) {
   return packages;
 }
 
+// 递归查找包含 dists 和 pool 目录的基础目录
+function findSourceBaseDir(startDir) {
+  // 检查当前目录是否同时包含 dists 和 pool
+  const hasDists = fs.existsSync(path.join(startDir, 'dists'));
+  const hasPool = fs.existsSync(path.join(startDir, 'pool'));
+  
+  if (hasDists && hasPool) {
+    return startDir;
+  }
+  
+  // 递归检查子目录
+  if (fs.existsSync(startDir)) {
+    const items = fs.readdirSync(startDir);
+    for (const item of items) {
+      const itemPath = path.join(startDir, item);
+      if (fs.statSync(itemPath).isDirectory()) {
+        const found = findSourceBaseDir(itemPath);
+        if (found) return found;
+      }
+    }
+  }
+  
+  return null;
+}
+
+// 列出目录树用于调试
+function listDirectoryTree(dir, prefix) {
+  if (!fs.existsSync(dir)) return;
+  
+  const items = fs.readdirSync(dir);
+  items.forEach(item => {
+    const itemPath = path.join(dir, item);
+    const stat = fs.statSync(itemPath);
+    console.log(`${prefix}${item}${stat.isDirectory() ? '/' : ''}`);
+    if (stat.isDirectory()) {
+      listDirectoryTree(itemPath, prefix + '  ');
+    }
+  });
+}
+
 // 新增：apt-mirror配置管理
 function processUrl(originalUrl) {
   let processedUrl = originalUrl;
@@ -1209,48 +1249,61 @@ function runMirrorSync(configName) {
 
             // 检查同步目录是否存在
             if (fs.existsSync(mirrorDir)) {
-              // 列出 mirrorDir 的内容
-              const mirrorContents = fs.readdirSync(mirrorDir);
-              console.log(`Mirror directory contents: ${JSON.stringify(mirrorContents)}`);
+              // 查找包含 dists 和 pool 的目录
+              const sourceBaseDir = findSourceBaseDir(mirrorDir);
+              console.log(`Source base directory: ${sourceBaseDir}`);
 
-              // 获取同步的 codename（从第一个 deb 源行解析）
-              let codename = 'focal';
-              if (config.debLines && config.debLines.length > 0) {
-                const firstDeb = config.debLines[0];
-                codename = firstDeb.codename || 'focal';
-                console.log(`Using codename from config: ${codename}`);
-              }
+              if (sourceBaseDir) {
+                const sourceContents = fs.readdirSync(sourceBaseDir);
+                console.log(`Source directory contents: ${JSON.stringify(sourceContents)}`);
 
-              // 创建新的仓库（如果已存在会覆盖配置）
-              createRepository(configName, codename);
-
-              // 获取仓库目录
-              const repoDir = getRepoDir(configName);
-              console.log(`Repository directory: ${repoDir}`);
-
-              // 复制同步的内容到仓库目录（mirrorDir 下直接是 dists/ 和 pool/）
-              mirrorContents.forEach(item => {
-                const sourcePath = path.join(mirrorDir, item);
-                const targetPath = path.join(repoDir, item);
-
-                try {
-                  if (fs.statSync(sourcePath).isDirectory()) {
-                    console.log(`Copying directory: ${item}`);
-                    fs.copySync(sourcePath, targetPath, { overwrite: true });
-                  } else {
-                    console.log(`Copying file: ${item}`);
-                    fs.copySync(sourcePath, targetPath, { overwrite: true });
-                  }
-                } catch (copyError) {
-                  console.error(`Error copying ${item}: ${copyError.message}`);
+                // 获取同步的 codename（从第一个 deb 源行解析）
+                let codename = 'focal';
+                if (config.debLines && config.debLines.length > 0) {
+                  const firstDeb = config.debLines[0];
+                  codename = firstDeb.codename || 'focal';
+                  console.log(`Using codename from config: ${codename}`);
                 }
-              });
 
-              // 验证仓库是否创建成功
-              const repoCheck = getRepoDir(configName);
-              console.log(`Repository created at: ${repoCheck}, exists: ${fs.existsSync(repoCheck)}`);
+                // 创建新的仓库（如果已存在会覆盖配置）
+                createRepository(configName, codename);
 
-              console.log(`Mirror sync content added to repository: ${configName}`);
+                // 获取仓库目录
+                const repoDir = getRepoDir(configName);
+                console.log(`Repository directory: ${repoDir}`);
+
+                // 复制同步的内容到仓库目录
+                sourceContents.forEach(item => {
+                  const sourcePath = path.join(sourceBaseDir, item);
+                  const targetPath = path.join(repoDir, item);
+
+                  try {
+                    if (fs.statSync(sourcePath).isDirectory()) {
+                      console.log(`Copying directory: ${item}`);
+                      fs.copySync(sourcePath, targetPath, { overwrite: true });
+                    } else {
+                      console.log(`Copying file: ${item}`);
+                      fs.copySync(sourcePath, targetPath, { overwrite: true });
+                    }
+                  } catch (copyError) {
+                    console.error(`Error copying ${item}: ${copyError.message}`);
+                  }
+                });
+
+                // 验证仓库是否创建成功
+                const repoCheck = getRepoDir(configName);
+                const distsCheck = path.join(repoCheck, 'dists');
+                const poolCheck = path.join(repoCheck, 'pool');
+                console.log(`Repository created at: ${repoCheck}, exists: ${fs.existsSync(repoCheck)}`);
+                console.log(`dists directory: ${distsCheck}, exists: ${fs.existsSync(distsCheck)}`);
+                console.log(`pool directory: ${poolCheck}, exists: ${fs.existsSync(poolCheck)}`);
+
+                console.log(`Mirror sync content added to repository: ${configName}`);
+              } else {
+                console.error(`Could not find dists and pool directories in ${mirrorDir}`);
+                // 列出完整目录树帮助调试
+                listDirectoryTree(mirrorDir, '');
+              }
             } else {
               console.error(`Mirror directory not found: ${mirrorDir}`);
               // 列出 syncDir 的内容帮助调试
