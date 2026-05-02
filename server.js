@@ -195,31 +195,33 @@ function signRepository(repoName = DEFAULT_REPO_NAME) {
 function createRepository(repoName, codename = 'focal') {
   try {
     console.log(`Creating new repository: ${repoName} with codename: ${codename}`);
-    
+
     const repoDir = getRepoDir(repoName);
     const confDir = path.join(repoDir, 'conf');
-    
+
+    // 确保目录存在（如果已存在也会正常继续）
     fs.ensureDirSync(repoDir);
     fs.ensureDirSync(confDir);
-    
+
     const distributionsPath = path.join(confDir, 'distributions');
     const optionsPath = path.join(confDir, 'options');
-    
-    fs.writeFileSync(distributionsPath, `Origin: Kylin Desktop
-Label: Kylin Desktop
+
+    // 总是写入配置文件（覆盖已存在的配置）
+    fs.writeFileSync(distributionsPath, `Origin: Kylin Desktop Mirror
+Label: ${repoName}
 Codename: ${codename}
 Architectures: amd64 i386 arm64 loongarch64 source
 Components: main
 Description: Kylin Desktop 包管理仓库 - ${repoName}
 `);
-    
+
     fs.writeFileSync(optionsPath, `verbose
 basedir .
 `);
-    
+
     // 不添加SignWith配置来禁用签名
     console.log('Repository created without signing configuration');
-    
+
     console.log(`Repository ${repoName} created successfully`);
     return repoDir;
   } catch (error) {
@@ -713,84 +715,83 @@ app.get('/packages', (req, res) => {
   try {
     const repoName = req.query.repo || DEFAULT_REPO_NAME;
     const repoDir = getRepoDir(repoName);
-    
+
     if (!fs.existsSync(repoDir)) {
       return res.status(404).json({ error: `Repository ${repoName} not found` });
     }
-    
+
+    // 首先尝试使用 reprepro list（适用于 reprepro 管理的仓库）
+    let allPackages = [];
+    let useReprepro = false;
+
     process.chdir(repoDir);
-    
     const codename = getRepoCodename(repoName);
     const command = `reprepro list ${codename}`;
-    
-    let result;
+
     try {
-      result = execSync(command, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+      const result = execSync(command, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+      if (result && result.trim()) {
+        useReprepro = true;
+        allPackages = result.trim().split('\n').filter(line => line.trim() !== '').map(line => {
+          const parts = line.trim().split(/\s+/);
+
+          if (parts.length < 3) {
+            return null;
+          }
+
+          const packageInfo = parts[0];
+          const packageName = parts[1];
+          const version = parts[2];
+
+          let architecture = 'all';
+          try {
+            const archPart = packageInfo.split('|')[2];
+            if (archPart) {
+              architecture = archPart.replace(':', '') || 'all';
+            }
+          } catch (error) {
+            // ignore
+          }
+
+          if (!packageName || !version) {
+            return null;
+          }
+
+          return {
+            name: packageName,
+            version: version,
+            architecture: architecture,
+            repo: repoName
+          };
+        }).filter(Boolean);
+      }
     } catch (execError) {
-      // 如果没有包，reprepro 可能返回空或错误
-      console.log('reprepro list returned:', execError.message);
-      result = '';
+      // reprepro list 失败，尝试从镜像目录读取
+      console.log('reprepro list not available or empty, trying to read from mirror directory');
     }
-    
-    // 处理空结果
-    if (!result || result.trim() === '') {
-      return res.json({
-        packages: [],
-        pagination: {
-          page: 1,
-          limit: 10,
-          total: 0,
-          totalPages: 0
+
+    // 如果 reprepro 没有返回包，尝试从 dists 目录读取（适用于镜像同步的仓库）
+    if (!useReprepro || allPackages.length === 0) {
+      console.log('Reading packages from mirror directory...');
+      const distsDir = path.join(repoDir, 'dists');
+      if (fs.existsSync(distsDir)) {
+        try {
+          allPackages = readPackagesFromMirror(repoDir, distsDir);
+          console.log(`Found ${allPackages.length} packages in mirror directory`);
+        } catch (mirrorError) {
+          console.error('Error reading packages from mirror:', mirrorError.message);
         }
-      });
+      }
     }
-    
-    const allPackages = result.trim().split('\n').filter(line => line.trim() !== '').map(line => {
-      const parts = line.trim().split(/\s+/);
-      
-      // reprepro list 输出格式: focal|main|amd64: package-name version
-      if (parts.length < 3) {
-        console.warn('Skipping invalid package line (not enough parts):', line);
-        return null;
-      }
-      
-      const packageInfo = parts[0];
-      const packageName = parts[1];
-      const version = parts[2];
-      
-      // 从focal|main|amd64: 中提取架构信息
-      let architecture = 'all';
-      try {
-        const archPart = packageInfo.split('|')[2];
-        if (archPart) {
-          architecture = archPart.replace(':', '') || 'all';
-        }
-      } catch (error) {
-        console.warn('Error parsing architecture from line:', line);
-      }
-      
-      // 过滤无效的包条目
-      if (!packageName || !version) {
-        console.warn('Skipping invalid package entry:', line);
-        return null;
-      }
-      
-      return {
-        name: packageName,
-        version: version,
-        architecture: architecture,
-        repo: repoName
-      };
-    }).filter(Boolean);
-    
+
     // 分页处理
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    
+
     const paginatedPackages = allPackages.slice(startIndex, endIndex);
-    
+
     res.json({
       success: true,
       packages: paginatedPackages,
@@ -808,6 +809,81 @@ app.get('/packages', (req, res) => {
     process.chdir(__dirname);
   }
 });
+
+// 从镜像目录读取包列表（解析 dists/*/main/binary-*/Packages.gz 或 Packages 文件）
+function readPackagesFromMirror(repoDir, distsDir) {
+  const packages = [];
+  const dists = fs.readdirSync(distsDir);
+
+  dists.forEach(dist => {
+    const distPath = path.join(distsDir, dist);
+    if (!fs.statSync(distPath).isDirectory()) return;
+
+    // 查找 main 目录（Debian 仓库的标准结构）
+    const mainPath = path.join(distPath, 'main');
+    if (!fs.existsSync(mainPath)) return;
+
+    // 查找 binary-* 目录
+    const mainContents = fs.readdirSync(mainPath);
+    mainContents.forEach(item => {
+      const binaryPath = path.join(mainPath, item);
+      if (!fs.statSync(binaryPath).isDirectory()) return;
+      if (!item.startsWith('binary-')) return;
+
+      const architecture = item.replace('binary-', '');
+
+      // 尝试读取 Packages.gz
+      const packagesGzPath = path.join(binaryPath, 'Packages.gz');
+      const packagesPath = path.join(binaryPath, 'Packages');
+
+      let packagesContent = '';
+      if (fs.existsSync(packagesGzPath)) {
+        try {
+          const zlib = require('zlib');
+          const compressed = fs.readFileSync(packagesGzPath);
+          packagesContent = zlib.gunzipSync(compressed).toString('utf8');
+        } catch (gzError) {
+          console.error('Error reading Packages.gz:', gzError.message);
+        }
+      } else if (fs.existsSync(packagesPath)) {
+        try {
+          packagesContent = fs.readFileSync(packagesPath, 'utf8');
+        } catch (readError) {
+          console.error('Error reading Packages:', readError.message);
+        }
+      }
+
+      // 解析 Packages 文件
+      if (packagesContent) {
+        const packageBlocks = packagesContent.split('\n\n');
+        packageBlocks.forEach(block => {
+          const lines = block.split('\n');
+          let packageName = '';
+          let version = '';
+
+          lines.forEach(line => {
+            if (line.startsWith('Package: ')) {
+              packageName = line.replace('Package: ', '').trim();
+            } else if (line.startsWith('Version: ')) {
+              version = line.replace('Version: ', '').trim();
+            }
+          });
+
+          if (packageName && version) {
+            packages.push({
+              name: packageName,
+              version: version,
+              architecture: architecture,
+              repo: path.basename(repoDir)
+            });
+          }
+        });
+      }
+    });
+  });
+
+  return packages;
+}
 
 // 新增：apt-mirror配置管理
 function processUrl(originalUrl) {
@@ -978,12 +1054,33 @@ function runMirrorSync(configName) {
     try {
       const configPath = path.join(mirrorConfigDir, `${configName}.conf`);
       const logPath = path.join(mirrorLogDir, `${configName}-${Date.now()}.log`);
-      
+
       if (!fs.existsSync(configPath)) {
         reject(new Error(`Mirror configuration ${configName} not found`));
         return;
       }
-      
+
+      // 从配置文件读取并解析 deb 源信息
+      let config = { name: configName, debLines: [] };
+      try {
+        const configContent = fs.readFileSync(configPath, 'utf8');
+        const debLines = configContent.split('\n').filter(line => line.trim().startsWith('deb '));
+        config.debLines = debLines.map(line => {
+          const parts = line.trim().split(/\s+/);
+          if (parts.length >= 3) {
+            return {
+              url: parts[1],
+              codename: parts[2],
+              components: parts.slice(3)
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        console.log(`Parsed config: ${JSON.stringify(config)}`);
+      } catch (parseError) {
+        console.error('Failed to parse config file:', parseError.message);
+      }
+
       // 确保apt-mirror需要的目录存在并具有正确的权限
       const aptMirrorSpoolDir = '/var/spool/apt-mirror';
       console.log(`Checking apt-mirror spool directory: ${aptMirrorSpoolDir}`);
@@ -1097,41 +1194,76 @@ function runMirrorSync(configName) {
           syncTasks[taskId].status = 'completed';
           syncTasks[taskId].progress = 100;
           syncTasks[taskId].endTime = new Date().toISOString();
-          
+
           // 保存任务状态到磁盘
           saveSyncTasks();
-          
+
           // 同步完成后，将同步的内容添加到仓库管理中
           try {
             const syncDir = path.join(mirrorSyncDir, configName);
             const mirrorDir = path.join(syncDir, 'mirror');
-            
+
+            console.log(`Checking mirror directory: ${mirrorDir}`);
+            console.log(`syncDir exists: ${fs.existsSync(syncDir)}`);
+            console.log(`mirrorDir exists: ${fs.existsSync(mirrorDir)}`);
+
             // 检查同步目录是否存在
             if (fs.existsSync(mirrorDir)) {
-              // 创建新的仓库
-              createRepository(configName);
-              
+              // 列出 mirrorDir 的内容
+              const mirrorContents = fs.readdirSync(mirrorDir);
+              console.log(`Mirror directory contents: ${JSON.stringify(mirrorContents)}`);
+
+              // 获取同步的 codename（从第一个 deb 源行解析）
+              let codename = 'focal';
+              if (config.debLines && config.debLines.length > 0) {
+                const firstDeb = config.debLines[0];
+                codename = firstDeb.codename || 'focal';
+                console.log(`Using codename from config: ${codename}`);
+              }
+
+              // 创建新的仓库（如果已存在会覆盖配置）
+              createRepository(configName, codename);
+
               // 获取仓库目录
               const repoDir = getRepoDir(configName);
-              
-              // 复制同步的内容到仓库目录
-              const mirrorContents = fs.readdirSync(mirrorDir);
+              console.log(`Repository directory: ${repoDir}`);
+
+              // 复制同步的内容到仓库目录（mirrorDir 下直接是 dists/ 和 pool/）
               mirrorContents.forEach(item => {
                 const sourcePath = path.join(mirrorDir, item);
                 const targetPath = path.join(repoDir, item);
-                
-                if (fs.statSync(sourcePath).isDirectory()) {
-                  fs.copySync(sourcePath, targetPath, { overwrite: true });
+
+                try {
+                  if (fs.statSync(sourcePath).isDirectory()) {
+                    console.log(`Copying directory: ${item}`);
+                    fs.copySync(sourcePath, targetPath, { overwrite: true });
+                  } else {
+                    console.log(`Copying file: ${item}`);
+                    fs.copySync(sourcePath, targetPath, { overwrite: true });
+                  }
+                } catch (copyError) {
+                  console.error(`Error copying ${item}: ${copyError.message}`);
                 }
               });
-              
+
+              // 验证仓库是否创建成功
+              const repoCheck = getRepoDir(configName);
+              console.log(`Repository created at: ${repoCheck}, exists: ${fs.existsSync(repoCheck)}`);
+
               console.log(`Mirror sync content added to repository: ${configName}`);
+            } else {
+              console.error(`Mirror directory not found: ${mirrorDir}`);
+              // 列出 syncDir 的内容帮助调试
+              if (fs.existsSync(syncDir)) {
+                console.log(`Contents of syncDir: ${fs.readdirSync(syncDir)}`);
+              }
             }
           } catch (repoError) {
             console.error('Failed to add mirror sync to repository:', repoError.message);
+            console.error('Stack:', repoError.stack);
             // 不影响同步结果，继续返回成功
           }
-          
+
           resolve({
             success: true,
             message: `Mirror sync completed successfully`,

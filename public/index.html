@@ -1576,16 +1576,6 @@ sudo apt install package-name
                 addDebLineInput();
             }
 
-            // 初始化源地址输入行的事件委托
-            const debLinesContainer2 = document.getElementById('debLinesContainer');
-            if (debLinesContainer2) {
-                debLinesContainer2.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('removeDebLine')) {
-                        removeDebLineInput(e.target);
-                    }
-                });
-            }
-
             // 加载镜像配置列表
             loadMirrorConfigs();
             
@@ -2981,8 +2971,10 @@ sudo apt install package-name`;
                             container.innerHTML = '';
 
                             if (debLines.length > 0) {
-                                debLines.forEach((line, index) => {
-                                    addDebLineInput(line, index === 0);
+                                debLines.forEach((deb, index) => {
+                                    // 将对象转换为完整的 deb 行字符串
+                                    const debLineStr = `deb ${deb.url} ${deb.codename} ${deb.components.join(' ')}`;
+                                    addDebLineInput(debLineStr, index === 0);
                                 });
                             } else if (mirror.debLine) {
                                 addDebLineInput(mirror.debLine, true);
