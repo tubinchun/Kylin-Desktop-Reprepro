@@ -2185,10 +2185,10 @@ app.post('/mirrors', (req, res) => {
         return res.status(400).json({ error: 'Missing required configuration parameters' });
       }
 
-      // 验证所有 debLines 的 codename 是否一致
+      // 检查所有 debLines 的 codename 是否一致（警告而非阻止）
       const codenames = [...new Set(config.debLines.map(d => d.codename))];
       if (codenames.length > 1) {
-        return res.status(400).json({ error: 'All deb sources must have the same codename' });
+        console.warn('Warning: Deb sources have different codenames, may cause repository data confusion');
       }
 
       const result = createMirrorConfig(config);
