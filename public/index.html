@@ -3106,7 +3106,10 @@ sudo apt install package-name`;
             const name = document.getElementById('mirrorConfigName').value.trim();
             const bandwidth = document.getElementById('mirrorBandwidth').value.trim();
 
+            console.log('Config name:', name || '(empty)');
+            
             if (!name) {
+                console.log('Error: name is empty');
                 showMessage('请输入配置名称', 'error');
                 return;
             }
