@@ -3151,11 +3151,11 @@ sudo apt install package-name`;
                 }
             }
 
-            // 验证所有 deb 源的 codename 必须相同
+            // 检查所有 deb 源的 codename 是否相同
             const codenames = [...new Set(parsedDebLines.map(d => d.codename))];
             if (codenames.length > 1) {
-                showMessage('所有 Deb 源的 codename（版本号）必须相同', 'error');
-                return;
+                console.log('Codenames:', codenames);
+                showMessage('警告：Deb 源的版本号不同，可能导致仓库数据混乱', 'warning');
             }
 
             // 获取用户选择的架构
