@@ -2178,10 +2178,13 @@ app.post('/sync/stop', (req, res) => {
 app.post('/mirrors', (req, res) => {
   try {
     const config = req.body;
+    console.log('Received mirror config request:', JSON.stringify(config, null, 2));
 
     // 支持新的 debLines 格式（多个 deb 源）
     if (config.debLines && Array.isArray(config.debLines) && config.debLines.length > 0) {
+      console.log('Using debLines format, count:', config.debLines.length);
       if (!config.name || !config.architectures) {
+        console.log('Missing required parameters: name:', !!config.name, 'architectures:', !!config.architectures);
         return res.status(400).json({ error: 'Missing required configuration parameters' });
       }
 
