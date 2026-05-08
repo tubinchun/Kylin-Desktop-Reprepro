@@ -163,6 +163,42 @@ Expire-Date: 0
   }
 }
 
+function updateReleaseDateToLocalTime(repoName) {
+  try {
+    const repoDir = getRepoDir(repoName);
+    const codename = getRepoCodename(repoName);
+    const releasePath = path.join(repoDir, 'dists', codename, 'Release');
+    
+    if (!fs.existsSync(releasePath)) {
+      console.log(`Release file not found: ${releasePath}`);
+      return;
+    }
+    
+    let content = fs.readFileSync(releasePath, 'utf8');
+    
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[now.getMonth()];
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayOfWeek = days[now.getDay()];
+    
+    const localDateStr = `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds} CST`;
+    
+    content = content.replace(/Date: .+/, `Date: ${localDateStr}`);
+    fs.writeFileSync(releasePath, content);
+    
+    console.log(`Updated Release date to local time: ${localDateStr}`);
+  } catch (error) {
+    console.warn(`Warning: Failed to update Release date:`, error.message);
+  }
+}
+
 // 签名仓库
 function signRepository(repoName = DEFAULT_REPO_NAME) {
   try {
@@ -175,6 +211,7 @@ function signRepository(repoName = DEFAULT_REPO_NAME) {
       execSync('gpg --version', { stdio: 'ignore' });
     } catch (error) {
       console.warn('GPG command not found. Skipping repository signing.');
+      updateReleaseDateToLocalTime(repoName);
       return;
     }
     
@@ -185,8 +222,11 @@ function signRepository(repoName = DEFAULT_REPO_NAME) {
     });
     
     console.log('Repository signed successfully');
+    
+    updateReleaseDateToLocalTime(repoName);
   } catch (error) {
     console.warn('Failed to sign repository:', error.message);
+    updateReleaseDateToLocalTime(repoName);
     // 签名失败不抛出异常，允许继续操作
   }
 }
