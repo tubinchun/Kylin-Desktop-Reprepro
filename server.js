@@ -3,14 +3,12 @@ const multer = require('multer');
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync, exec } = require('child_process');
-// 暂时注释掉这些依赖，以便能够启动服务器
-// const schedule = require('node-schedule');
-// const cron = require('cron');
 
 // 新增：apt-mirror配置目录
 const mirrorConfigDir = path.join(__dirname, 'mirror-configs');
 const mirrorSyncDir = path.join(__dirname, 'mirror-syncs');
 const mirrorLogDir = path.join(__dirname, 'mirror-logs');
+const scheduleTasksFile = path.join(__dirname, 'schedule-tasks.json');
 
 // 同步超时配置（默认24小时，单位：毫秒）
 // 大型镜像同步可能需要数小时甚至数天，设置较长的超时时间
@@ -1039,21 +1037,29 @@ function createMirrorConfig(config) {
     let debLinesContent = '';
     let firstCodename = codename;
 
-    // 处理多个 deb 源地址
+    // 处理多个 deb 源地址，为每个架构添加单独的 deb 行
     if (debLines && Array.isArray(debLines) && debLines.length > 0) {
       firstCodename = debLines[0].codename;
 
       debLines.forEach((deb, index) => {
         const processedUrl = processUrl(deb.url);
         console.log(`Deb line ${index + 1} - Original URL: ${deb.url}, Processed URL: ${processedUrl}`);
-        debLinesContent += `deb ${processedUrl} ${deb.codename} ${deb.components.join(' ')}\n`;
+        
+        // 为每个架构添加单独的 deb 行
+        architectures.forEach(arch => {
+          debLinesContent += `deb-${arch} ${processedUrl} ${deb.codename} ${deb.components.join(' ')}\n`;
+        });
       });
     } else {
       // 处理单个 deb 源（兼容旧格式）
       const processedUrl = processUrl(url);
       console.log(`Original URL: ${url}`);
       console.log(`Processed URL: ${processedUrl}`);
-      debLinesContent = `deb ${processedUrl} ${codename} ${components.join(' ')}\n`;
+      
+      // 为每个架构添加单独的 deb 行
+      architectures.forEach(arch => {
+        debLinesContent += `deb-${arch} ${processedUrl} ${codename} ${components.join(' ')}\n`;
+      });
     }
 
     const configContent = `
@@ -1117,6 +1123,280 @@ ${debLinesContent}
       error: error.message
     };
   }
+}
+
+// 新增：计划任务管理（基于 crontab）
+let scheduleTasks = {};
+const CRON_MARKER = '# APT-REPO-MIRROR-SYNC';
+const SYNC_SCRIPT_PATH = path.join(__dirname, 'sync-mirror.sh');
+
+// 加载保存的计划任务
+function loadScheduleTasks() {
+  try {
+    if (fs.existsSync(scheduleTasksFile)) {
+      const tasksData = fs.readFileSync(scheduleTasksFile, 'utf8');
+      scheduleTasks = JSON.parse(tasksData);
+      console.log(`Loaded ${Object.keys(scheduleTasks).length} schedule tasks from disk`);
+    }
+  } catch (error) {
+    console.error('Failed to load schedule tasks:', error.message);
+    scheduleTasks = {};
+  }
+}
+
+// 保存计划任务到磁盘
+function saveScheduleTasks() {
+  try {
+    fs.writeFileSync(scheduleTasksFile, JSON.stringify(scheduleTasks, null, 2));
+    console.log(`Saved ${Object.keys(scheduleTasks).length} schedule tasks to disk`);
+  } catch (error) {
+    console.error('Failed to save schedule tasks:', error.message);
+  }
+}
+
+// 生成同步脚本
+function generateSyncScript() {
+  const actualPort = process.env.PORT || 3000;
+  const scriptContent = '#!/bin/bash\n' +
+'# APT Repository Mirror Sync Script\n' +
+'# Created by Kylin Desktop Package Manager\n' +
+'\n' +
+'CONFIG_NAME="$1"\n' +
+'if [ -z "$CONFIG_NAME" ]; then\n' +
+'    echo "Usage: $0 <config_name>"\n' +
+'    exit 1\n' +
+'fi\n' +
+'\n' +
+'echo "Starting scheduled sync for config: $CONFIG_NAME at $(date)"\n' +
+'\n' +
+'# Call the sync API endpoint\n' +
+'curl -X POST "http://localhost:' + actualPort + '/mirrors/sync/$CONFIG_NAME" \\\n' +
+'     -H "Content-Type: application/json" \\\n' +
+'     --max-time 86400\n' +
+'\n' +
+'echo "Sync completed at $(date)"\n';
+  fs.writeFileSync(SYNC_SCRIPT_PATH, scriptContent);
+  fs.chmodSync(SYNC_SCRIPT_PATH, '755');
+  console.log(`Generated sync script at: ${SYNC_SCRIPT_PATH}`);
+}
+
+// 获取当前用户的 crontab
+function getCurrentCrontab() {
+  try {
+    const result = execSync('crontab -l 2>/dev/null || echo ""', { encoding: 'utf8' });
+    return result;
+  } catch (error) {
+    return '';
+  }
+}
+
+// 安装 crontab 条目
+function installCrontab() {
+  try {
+    // 检查 crond 服务是否运行
+    try {
+      execSync('pgrep crond || pgrep cron', { stdio: 'ignore' });
+    } catch (error) {
+      console.warn('crond/cron service is not running, trying to start it...');
+      try {
+        execSync('service cron start 2>/dev/null || service crond start 2>/dev/null || /etc/init.d/cron start 2>/dev/null', { stdio: 'ignore' });
+        console.log('crond/cron service started successfully');
+      } catch (startError) {
+        console.error('Failed to start crond/cron service:', startError.message);
+      }
+    }
+
+    let crontab = getCurrentCrontab();
+
+    // 移除所有 APT-REPO-MIRROR-SYNC 相关的条目
+    const lines = crontab.split('\n').filter(line => !line.includes(CRON_MARKER));
+    crontab = lines.join('\n').trim();
+
+    // 添加新的任务
+    let newCrontab = crontab;
+    if (newCrontab) {
+      newCrontab += '\n';
+    }
+
+    // 添加日志输出重定向
+    const cronLogPath = path.join(mirrorLogDir, 'cron-sync.log');
+
+    for (const taskId in scheduleTasks) {
+      const task = scheduleTasks[taskId];
+      if (task.enabled) {
+        // 添加日志重定向，方便调试
+        const cronEntry = `${task.cronExpression} ${SYNC_SCRIPT_PATH} ${task.configName} >> ${cronLogPath} 2>&1 ${CRON_MARKER}\n`;
+        newCrontab += cronEntry;
+        console.log(`Added crontab entry: ${task.cronExpression} -> ${task.configName}`);
+      }
+    }
+
+    // 写入新的 crontab
+    execSync(`(echo "${newCrontab}" | crontab -)`, { stdio: 'pipe' });
+    console.log('Crontab installed successfully');
+    
+    // 验证安装
+    try {
+      const installedCrontab = execSync('crontab -l', { encoding: 'utf8' });
+      console.log('Current crontab entries:');
+      console.log(installedCrontab);
+    } catch (error) {
+      console.warn('Failed to list crontab:', error.message);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to install crontab:', error.message);
+    return false;
+  }
+}
+
+// 计算下次运行时间
+function calculateNextRun(cronExpression) {
+  try {
+    const parts = cronExpression.split(' ');
+    if (parts.length !== 5) {
+      return null;
+    }
+
+    const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+    const now = new Date();
+
+    let next = new Date(now);
+
+    if (dayOfWeek !== '*') {
+      const targetDay = parseInt(dayOfWeek);
+      const daysUntilTarget = (targetDay - now.getDay() + 7) % 7 || 7;
+      next.setDate(now.getDate() + daysUntilTarget);
+    }
+
+    if (hour !== '*') {
+      next.setHours(parseInt(hour), 0, 0, 0);
+    } else {
+      next.setHours(next.getHours() + 1, 0, 0, 0);
+    }
+
+    if (minute !== '*') {
+      next.setMinutes(parseInt(minute));
+    }
+
+    return next.toISOString();
+  } catch (error) {
+    return null;
+  }
+}
+
+// 创建计划任务
+function createScheduleTask(configName, cronExpression, enabled = true) {
+  try {
+    // 验证 crontab 命令
+    try {
+      execSync('which crontab', { stdio: 'ignore' });
+    } catch (error) {
+      return { success: false, error: 'crontab is not installed on this system' };
+    }
+
+    const taskId = `schedule-${Date.now()}`;
+    const task = {
+      id: taskId,
+      configName,
+      cronExpression,
+      enabled,
+      createdAt: new Date().toISOString(),
+      lastRun: null,
+      nextRun: calculateNextRun(cronExpression)
+    };
+
+    scheduleTasks[taskId] = task;
+    saveScheduleTasks();
+
+    // 生成同步脚本
+    generateSyncScript();
+
+    // 如果启用，安装 crontab
+    if (enabled) {
+      installCrontab();
+    }
+
+    console.log(`Created schedule task ${taskId} for config ${configName}`);
+    return { success: true, task };
+  } catch (error) {
+    console.error('Failed to create schedule task:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// 更新计划任务
+function updateScheduleTask(taskId, updates) {
+  try {
+    if (!scheduleTasks[taskId]) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    const task = scheduleTasks[taskId];
+
+    if (updates.cronExpression !== undefined) {
+      task.cronExpression = updates.cronExpression;
+      task.nextRun = calculateNextRun(updates.cronExpression);
+    }
+    if (updates.enabled !== undefined) {
+      task.enabled = updates.enabled;
+    }
+    if (updates.configName !== undefined) {
+      task.configName = updates.configName;
+    }
+
+    saveScheduleTasks();
+
+    // 重新安装 crontab
+    installCrontab();
+
+    console.log(`Updated schedule task ${taskId}`);
+    return { success: true, task };
+  } catch (error) {
+    console.error('Failed to update schedule task:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// 删除计划任务
+function deleteScheduleTask(taskId) {
+  try {
+    if (!scheduleTasks[taskId]) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    delete scheduleTasks[taskId];
+    saveScheduleTasks();
+
+    // 重新安装 crontab
+    installCrontab();
+
+    console.log(`Deleted schedule task ${taskId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to delete schedule task:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// 列出所有 crontab 任务
+function listCrontabTasks() {
+  try {
+    const crontab = getCurrentCrontab();
+    const lines = crontab.split('\n').filter(line => line.includes(CRON_MARKER));
+    return lines;
+  } catch (error) {
+    return [];
+  }
+}
+
+// 初始化所有计划任务
+function initScheduleTasks() {
+  loadScheduleTasks();
+  generateSyncScript();
+  installCrontab();
+  console.log('Schedule tasks initialized');
 }
 
 // 新增：同步任务状态管理
@@ -2292,6 +2572,33 @@ app.post('/mirrors/:configName/sync', (req, res) => {
   }
 });
 
+// crontab 调用的同步端点（同步等待完成）
+app.post('/mirrors/sync/:configName', async (req, res) => {
+  try {
+    const configName = req.params.configName;
+    console.log(`Crontab triggered sync for config: ${configName}`);
+    
+    const result = await runMirrorSync(configName);
+    console.log(`Crontab sync completed for config: ${configName}`);
+    
+    // 更新计划任务的 lastRun 时间
+    for (const taskId in scheduleTasks) {
+      const task = scheduleTasks[taskId];
+      if (task.configName === configName) {
+        task.lastRun = new Date().toISOString();
+        task.nextRun = calculateNextRun(task.cronExpression);
+        console.log(`Updated lastRun for task ${taskId}: ${task.lastRun}`);
+      }
+    }
+    saveScheduleTasks();
+    
+    res.json(result);
+  } catch (error) {
+    console.error(`Crontab sync failed for ${configName}:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 新增：获取同步任务状态API
 app.get('/mirrors/tasks/:taskId', (req, res) => {
   try {
@@ -2810,6 +3117,164 @@ app.post('/mirrors/tasks/:taskId/cancel', (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// 计划任务 API - 获取所有任务
+app.get('/schedule/tasks', (req, res) => {
+  try {
+    const tasksList = Object.values(scheduleTasks);
+    res.json({
+      success: true,
+      tasks: tasksList
+    });
+  } catch (error) {
+    console.error('Failed to get schedule tasks:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 计划任务 API - 创建任务
+app.post('/schedule/tasks', (req, res) => {
+  try {
+    const { configName, cronExpression, enabled } = req.body;
+    
+    if (!configName || !cronExpression) {
+      return res.status(400).json({ error: 'Missing required fields: configName and cronExpression' });
+    }
+
+    const result = createScheduleTask(configName, cronExpression, enabled !== false);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Schedule task created successfully',
+        task: result.task
+      });
+    } else {
+      res.status(500).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error('Failed to create schedule task:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 计划任务 API - 更新任务
+app.put('/schedule/tasks/:taskId', (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { configName, cronExpression, enabled } = req.body;
+    
+    const updates = {};
+    if (configName !== undefined) updates.configName = configName;
+    if (cronExpression !== undefined) updates.cronExpression = cronExpression;
+    if (enabled !== undefined) updates.enabled = enabled;
+
+    const result = updateScheduleTask(taskId, updates);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Schedule task updated successfully',
+        task: result.task
+      });
+    } else {
+      res.status(404).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error('Failed to update schedule task:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 计划任务 API - 删除任务
+app.delete('/schedule/tasks/:taskId', (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const result = deleteScheduleTask(taskId);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Schedule task deleted successfully'
+      });
+    } else {
+      res.status(404).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error('Failed to delete schedule task:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 计划任务 API - 检查 crontab 状态
+app.get('/schedule/crontab/status', (req, res) => {
+  try {
+    // 检查 cron 服务是否运行
+    let cronRunning = false;
+    try {
+      execSync('pgrep crond || pgrep cron', { stdio: 'ignore' });
+      cronRunning = true;
+    } catch (error) {
+      cronRunning = false;
+    }
+
+    // 获取当前 crontab
+    let currentCrontab = '';
+    try {
+      currentCrontab = execSync('crontab -l', { encoding: 'utf8' });
+    } catch (error) {
+      currentCrontab = 'Failed to get crontab: ' + error.message;
+    }
+
+    // 检查脚本是否存在
+    const scriptExists = fs.existsSync(SYNC_SCRIPT_PATH);
+
+    res.json({
+      success: true,
+      cronServiceRunning: cronRunning,
+      scriptExists,
+      scriptPath: SYNC_SCRIPT_PATH,
+      currentCrontab,
+      scheduleTasks
+    });
+  } catch (error) {
+    console.error('Failed to get crontab status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 计划任务 API - 手动执行同步（用于测试）
+app.post('/schedule/test/:configName', async (req, res) => {
+  try {
+    const configName = req.params.configName;
+    console.log(`Manual test sync for config: ${configName}`);
+    
+    // 模拟 crontab 调用
+    const result = await runMirrorSync(configName);
+    
+    // 更新任务状态
+    for (const taskId in scheduleTasks) {
+      const task = scheduleTasks[taskId];
+      if (task.configName === configName) {
+        task.lastRun = new Date().toISOString();
+        task.nextRun = calculateNextRun(task.cronExpression);
+      }
+    }
+    saveScheduleTasks();
+    
+    res.json({
+      success: true,
+      message: 'Manual sync completed successfully',
+      result
+    });
+  } catch (error) {
+    console.error('Failed to run test sync:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 初始化计划任务
+initScheduleTasks();
 
 // 启动服务器
 app.listen(PORT, () => {

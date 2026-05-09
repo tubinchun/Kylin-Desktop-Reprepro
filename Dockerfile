@@ -42,7 +42,9 @@ RUN echo -e "verbose\nbasedir .\n" > /app/repos/default/conf/options
 
 RUN ls -la /app/repos/default/conf/
 
+# 创建启动脚本
+RUN echo '#!/bin/bash\n\necho "Starting cron service..."\n/etc/init.d/cron start\n\necho "Cron service started with PID: $(pgrep cron)"\n\necho "Starting Node.js server..."\nnpm start' > /app/start.sh && chmod +x /app/start.sh
+
 EXPOSE 3000
 
-ENTRYPOINT ["bash", "-c"]
-CMD ["npm start"]
+ENTRYPOINT ["bash", "/app/start.sh"]

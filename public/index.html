@@ -838,6 +838,30 @@
             padding-top: 0.5rem;
             border-top: 1px solid rgba(156, 163, 175, 0.1);
         }
+
+        /* 计划任务单选选项样式 */
+        .card input[type="radio"] + span {
+            cursor: pointer;
+        }
+        
+        .card input[type="radio"]:checked + span {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .card input[type="radio"]:checked ~ * {
+            border-color: var(--primary) !important;
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .card details summary {
+            user-select: none;
+        }
+        
+        .card details[open] summary {
+            margin-bottom: 0.5rem;
+        }
+
     </style>
 </head>
 <body>
@@ -1278,6 +1302,137 @@ sudo apt install package-name
 
             <div class="card">
                 <div class="card-header">
+                    <h3 class="card-title">计划任务</h3>
+                    <p class="card-description">管理镜像同步的定时任务</p>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <button class="btn btn-primary" id="addScheduleBtn">添加计划任务</button>
+                    </div>
+                    <div id="scheduleTaskList" class="table-container">
+                        <p style="text-align: center; color: var(--text-secondary);">加载中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="scheduleTaskForm" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">添加/编辑计划任务</h3>
+                    <p class="card-description">设置定时同步任务</p>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label for="scheduleConfigName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">选择镜像配置</label>
+                        <select id="scheduleConfigName" class="form-input" style="width: 100%;">
+                            <option value="">请选择镜像配置</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 友好的时间设置 -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.75rem; font-weight: 500;">同步频率</label>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <!-- 每分钟 -->
+                            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s;">
+                                <input type="radio" name="syncFrequency" value="everyMinute" onchange="updateCronExpression()">
+                                <span>每分钟</span>
+                            </label>
+                            
+                            <!-- 每小时 -->
+                            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s;">
+                                <input type="radio" name="syncFrequency" value="everyHour" onchange="updateCronExpression()">
+                                <span>每小时</span>
+                            </label>
+                            
+                            <!-- 每天 -->
+                            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s;">
+                                <input type="radio" name="syncFrequency" value="daily" onchange="updateCronExpression()">
+                                <span>每天</span>
+                                <div id="dailyTimeSection" style="display: none; margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+                                    <select id="dailyHour" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 24}, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="dailyMinute" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 60}, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </label>
+                            
+                            <!-- 每周 -->
+                            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s;">
+                                <input type="radio" name="syncFrequency" value="weekly" onchange="updateCronExpression()">
+                                <span>每周</span>
+                                <div id="weeklySection" style="display: none; margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+                                    <select id="weeklyDay" class="form-input" style="width: 100px;" onchange="updateCronExpression()">
+                                        <option value="0">周日</option>
+                                        <option value="1">周一</option>
+                                        <option value="2">周二</option>
+                                        <option value="3">周三</option>
+                                        <option value="4">周四</option>
+                                        <option value="5">周五</option>
+                                        <option value="6">周六</option>
+                                    </select>
+                                    <select id="weeklyHour" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 24}, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="weeklyMinute" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 60}, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </label>
+                            
+                            <!-- 每月 -->
+                            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s;">
+                                <input type="radio" name="syncFrequency" value="monthly" onchange="updateCronExpression()">
+                                <span>每月</span>
+                                <div id="monthlySection" style="display: none; margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+                                    <select id="monthlyDay" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 31}, (_, i) => `<option value="${i+1}">${i+1}日</option>`).join('')}
+                                    </select>
+                                    <select id="monthlyHour" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 24}, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="monthlyMinute" class="form-input" style="width: 70px;" onchange="updateCronExpression()">
+                                        ${Array.from({length: 60}, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 高级模式（可选显示） -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <details>
+                            <summary style="cursor: pointer; font-weight: 500; padding: 0.5rem 0;">高级模式（自定义Cron表达式）</summary>
+                            <div style="margin-top: 1rem;">
+                                <label for="scheduleCron" style="display: block; margin-bottom: 0.5rem;">Cron 表达式</label>
+                                <input type="text" id="scheduleCron" class="form-input" placeholder="例如: 0 2 * * *" style="width: 100%;">
+                                <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">格式: 分 时 日 月 周</small>
+                            </div>
+                        </details>
+                    </div>
+                    
+                    <!-- 启用状态 -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                            <input type="checkbox" id="scheduleEnabled" checked>
+                            <span>启用任务</span>
+                        </label>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="saveScheduleBtn">保存</button>
+                        <button class="btn btn-secondary" id="cancelScheduleBtn">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
                     <h3 class="card-title">同步任务列表</h3>
                     <p class="card-description">查看所有同步任务的历史记录</p>
                 </div>
@@ -1551,7 +1706,47 @@ sudo apt install package-name
                     cancelMirrorEdit();
                 });
             }
-            
+
+            // 添加计划任务按钮
+            const addScheduleBtn = document.getElementById('addScheduleBtn');
+            if (addScheduleBtn) {
+                addScheduleBtn.addEventListener('click', function() {
+                    editingScheduleTaskId = null;
+                    document.getElementById('scheduleConfigName').value = '';
+                    document.getElementById('scheduleCron').value = '';
+                    document.getElementById('scheduleEnabled').checked = true;
+                    showScheduleForm();
+                });
+            }
+
+            // 保存计划任务按钮
+            const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+            if (saveScheduleBtn) {
+                saveScheduleBtn.addEventListener('click', function() {
+                    saveScheduleTask();
+                });
+            }
+
+            // 取消计划任务按钮
+            const cancelScheduleBtn = document.getElementById('cancelScheduleBtn');
+            if (cancelScheduleBtn) {
+                cancelScheduleBtn.addEventListener('click', function() {
+                    hideScheduleForm();
+                });
+            }
+
+            // Cron 预设按钮
+            const cronPresetButtons = document.querySelectorAll('[data-cron]');
+            cronPresetButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cron = this.getAttribute('data-cron');
+                    document.getElementById('scheduleCron').value = cron;
+                });
+            });
+
+            // 加载计划任务列表
+            loadScheduleTasks();
+
             // 架构标签选择器点击事件
             const architectureTags = document.querySelectorAll('.architecture-tag');
             architectureTags.forEach(tag => {
@@ -2123,6 +2318,366 @@ sudo apt install package-name`;
                     console.error('删除仓库错误:', error);
                     showMessage('删除仓库过程中发生错误', 'error');
                 });
+        }
+
+        // 计划任务变量
+        let editingScheduleTaskId = null;
+
+        // 更新 cron 表达式
+        function updateCronExpression() {
+            const frequency = document.querySelector('input[name="syncFrequency"]:checked');
+            if (!frequency) return;
+            
+            toggleFrequencySections();
+            
+            let cron = '';
+            
+            switch (frequency.value) {
+                case 'everyMinute':
+                    cron = '* * * * *';
+                    break;
+                case 'everyHour':
+                    cron = '0 * * * *';
+                    break;
+                case 'daily':
+                    const hour = document.getElementById('dailyHour').value;
+                    const minute = document.getElementById('dailyMinute').value;
+                    cron = `${minute} ${hour} * * *`;
+                    break;
+                case 'weekly':
+                    const wDay = document.getElementById('weeklyDay').value;
+                    const wHour = document.getElementById('weeklyHour').value;
+                    const wMinute = document.getElementById('weeklyMinute').value;
+                    cron = `${wMinute} ${wHour} * * ${wDay}`;
+                    break;
+                case 'monthly':
+                    const mDay = document.getElementById('monthlyDay').value;
+                    const mHour = document.getElementById('monthlyHour').value;
+                    const mMinute = document.getElementById('monthlyMinute').value;
+                    cron = `${mMinute} ${mHour} ${mDay} * *`;
+                    break;
+            }
+            
+            // 更新高级模式的输入框
+            document.getElementById('scheduleCron').value = cron;
+        }
+
+        // 切换频率部分的显示
+        function toggleFrequencySections() {
+            const frequency = document.querySelector('input[name="syncFrequency"]:checked');
+            if (!frequency) return;
+            
+            // 隐藏所有部分
+            document.getElementById('dailyTimeSection').style.display = 'none';
+            document.getElementById('weeklySection').style.display = 'none';
+            document.getElementById('monthlySection').style.display = 'none';
+            
+            // 显示相应部分
+            switch (frequency.value) {
+                case 'daily':
+                    document.getElementById('dailyTimeSection').style.display = 'flex';
+                    break;
+                case 'weekly':
+                    document.getElementById('weeklySection').style.display = 'flex';
+                    break;
+                case 'monthly':
+                    document.getElementById('monthlySection').style.display = 'flex';
+                    break;
+            }
+        }
+
+        // 从 cron 表达式解析到 UI
+        function parseCronToUI(cron) {
+            const parts = cron.trim().split(/\s+/);
+            if (parts.length !== 5) {
+                // 默认每天 2 点
+                document.querySelector('input[name="syncFrequency"][value="daily"]').checked = true;
+                document.getElementById('dailyHour').value = '2';
+                document.getElementById('dailyMinute').value = '0';
+                toggleFrequencySections();
+                updateCronExpression();
+                return;
+            }
+            
+            const [minute, hour, day, month, week] = parts;
+            
+            // 判断是哪种频率
+            if (minute === '*' && hour === '*' && day === '*' && month === '*' && week === '*') {
+                // 每分钟
+                document.querySelector('input[name="syncFrequency"][value="everyMinute"]').checked = true;
+            } else if (minute === '0' && hour === '*' && day === '*' && month === '*' && week === '*') {
+                // 每小时
+                document.querySelector('input[name="syncFrequency"][value="everyHour"]').checked = true;
+            } else if (day === '*' && month === '*' && week !== '*') {
+                // 每周
+                document.querySelector('input[name="syncFrequency"][value="weekly"]').checked = true;
+                document.getElementById('weeklyDay').value = week;
+                document.getElementById('weeklyHour').value = hour === '*' ? '0' : hour;
+                document.getElementById('weeklyMinute').value = minute === '*' ? '0' : minute;
+            } else if (day !== '*' && month === '*' && week === '*') {
+                // 每月
+                document.querySelector('input[name="syncFrequency"][value="monthly"]').checked = true;
+                document.getElementById('monthlyDay').value = day;
+                document.getElementById('monthlyHour').value = hour === '*' ? '0' : hour;
+                document.getElementById('monthlyMinute').value = minute === '*' ? '0' : minute;
+            } else {
+                // 默认每天
+                document.querySelector('input[name="syncFrequency"][value="daily"]').checked = true;
+                document.getElementById('dailyHour').value = hour === '*' ? '0' : hour;
+                document.getElementById('dailyMinute').value = minute === '*' ? '0' : minute;
+            }
+            
+            toggleFrequencySections();
+            updateCronExpression();
+        }
+
+        // 初始化频率选择器
+        function initializeFrequencySelectors() {
+            // 填充时间下拉框
+            const hourSelects = ['dailyHour', 'weeklyHour', 'monthlyHour'];
+            const minuteSelects = ['dailyMinute', 'weeklyMinute', 'monthlyMinute'];
+            
+            // 填充小时
+            hourSelects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '';
+                    for (let i = 0; i < 24; i++) {
+                        select.innerHTML += `<option value="${i}">${String(i).padStart(2, '0')}</option>`;
+                    }
+                }
+            });
+            
+            // 填充分钟
+            minuteSelects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '';
+                    for (let i = 0; i < 60; i++) {
+                        select.innerHTML += `<option value="${i}">${String(i).padStart(2, '0')}</option>`;
+                    }
+                }
+            });
+            
+            // 填充每月天数
+            const monthlyDay = document.getElementById('monthlyDay');
+            if (monthlyDay) {
+                monthlyDay.innerHTML = '';
+                for (let i = 1; i <= 31; i++) {
+                    monthlyDay.innerHTML += `<option value="${i}">${i}日</option>`;
+                }
+            }
+        }
+
+        // 加载计划任务列表
+        function loadScheduleTasks() {
+            const scheduleTaskList = document.getElementById('scheduleTaskList');
+            if (!scheduleTaskList) return;
+            
+            fetch('/schedule/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.tasks && data.tasks.length > 0) {
+                        let html = '<table><thead><tr><th>配置名称</th><th>Cron 表达式</th><th>状态</th><th>上次运行</th><th>下次运行</th><th>操作</th></tr></thead><tbody>';
+                        data.tasks.forEach(task => {
+                            const statusText = task.enabled ? '启用' : '禁用';
+                            const statusClass = task.enabled ? 'status-completed' : 'status-stopped';
+                            const lastRun = task.lastRun ? new Date(task.lastRun).toLocaleString() : '-';
+                            const nextRun = task.nextRun ? new Date(task.nextRun).toLocaleString() : '-';
+                            
+                            html += `<tr>
+                                <td>${task.configName}</td>
+                                <td>${task.cronExpression}</td>
+                                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                                <td>${lastRun}</td>
+                                <td>${nextRun}</td>
+                                <td>
+                                    <button class="btn btn-xs btn-primary" onclick="editScheduleTask('${task.id}')">编辑</button>
+                                    <button class="btn btn-xs ${task.enabled ? 'btn-warning' : 'btn-success'}" onclick="toggleScheduleTask('${task.id}')">${task.enabled ? '禁用' : '启用'}</button>
+                                    <button class="btn btn-xs btn-danger" onclick="deleteScheduleTask('${task.id}')">删除</button>
+                                </td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                        scheduleTaskList.innerHTML = html;
+                    } else {
+                        scheduleTaskList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">暂无计划任务</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载计划任务失败:', error);
+                    scheduleTaskList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">加载失败</p>';
+                });
+        }
+
+        // 加载镜像配置到下拉选择框
+        function loadMirrorConfigsToSelect() {
+            const select = document.getElementById('scheduleConfigName');
+            if (!select) return Promise.resolve();
+            
+            return fetch('/mirrors')
+                .then(response => response.json())
+                .then(data => {
+                    // 后端返回的是 'mirrors' 字段，不是 'configs'
+                    if (data.success && data.mirrors && data.mirrors.length > 0) {
+                        select.innerHTML = '<option value="">请选择镜像配置</option>';
+                        data.mirrors.forEach(config => {
+                            select.innerHTML += `<option value="${config.name}">${config.name}</option>`;
+                        });
+                    } else {
+                        // 即使没有配置也显示默认选项
+                        select.innerHTML = '<option value="">请选择镜像配置</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载镜像配置失败:', error);
+                    select.innerHTML = '<option value="">请选择镜像配置</option>';
+                });
+        }
+
+        // 显示计划任务表单
+        function showScheduleForm() {
+            const form = document.getElementById('scheduleTaskForm');
+            if (form) {
+                form.style.display = 'block';
+            }
+            
+            // 初始化频率选择器
+            initializeFrequencySelectors();
+            
+            // 默认选择每天
+            document.querySelector('input[name="syncFrequency"][value="daily"]').checked = true;
+            document.getElementById('dailyHour').value = '2';
+            document.getElementById('dailyMinute').value = '0';
+            
+            toggleFrequencySections();
+            updateCronExpression();
+            loadMirrorConfigsToSelect();
+        }
+
+        // 隐藏计划任务表单
+        function hideScheduleForm() {
+            const form = document.getElementById('scheduleTaskForm');
+            if (form) {
+                form.style.display = 'none';
+            }
+            editingScheduleTaskId = null;
+            document.getElementById('scheduleConfigName').value = '';
+            document.getElementById('scheduleCron').value = '';
+            document.getElementById('scheduleEnabled').checked = true;
+        }
+
+        // 编辑计划任务
+        function editScheduleTask(taskId) {
+            editingScheduleTaskId = taskId;
+            
+            fetch('/schedule/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.tasks) {
+                        const task = data.tasks.find(t => t.id === taskId);
+                        if (task) {
+                            // 初始化频率选择器
+                            initializeFrequencySelectors();
+                            
+                            loadMirrorConfigsToSelect().then(() => {
+                                document.getElementById('scheduleConfigName').value = task.configName;
+                                document.getElementById('scheduleEnabled').checked = task.enabled;
+                                
+                                // 解析 cron 表达式到 UI
+                                parseCronToUI(task.cronExpression);
+                                
+                                showScheduleForm();
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('加载任务失败:', error);
+                });
+        }
+
+        // 切换计划任务状态
+        function toggleScheduleTask(taskId) {
+            fetch('/schedule/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.tasks) {
+                        const task = data.tasks.find(t => t.id === taskId);
+                        if (task) {
+                            fetch('/schedule/tasks/' + taskId, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ enabled: !task.enabled })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    showMessage('任务状态已更新', 'success');
+                                    loadScheduleTasks();
+                                } else {
+                                    showMessage('更新失败: ' + data.error, 'error');
+                                }
+                            });
+                        }
+                    }
+                });
+        }
+
+        // 删除计划任务
+        function deleteScheduleTask(taskId) {
+            if (confirm('确定要删除此计划任务吗？')) {
+                fetch('/schedule/tasks/' + taskId, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showMessage('任务已删除', 'success');
+                            loadScheduleTasks();
+                        } else {
+                            showMessage('删除失败: ' + data.error, 'error');
+                        }
+                    });
+            }
+        }
+
+        // 保存计划任务
+        function saveScheduleTask() {
+            const configName = document.getElementById('scheduleConfigName').value;
+            const cronExpression = document.getElementById('scheduleCron').value;
+            const enabled = document.getElementById('scheduleEnabled').checked;
+            
+            if (!configName || !cronExpression) {
+                showMessage('请填写完整信息', 'error');
+                return;
+            }
+
+            const url = editingScheduleTaskId 
+                ? `/schedule/tasks/${editingScheduleTaskId}`
+                : '/schedule/tasks';
+            const method = editingScheduleTaskId ? 'PUT' : 'POST';
+            const body = editingScheduleTaskId 
+                ? JSON.stringify({ configName, cronExpression, enabled })
+                : JSON.stringify({ configName, cronExpression, enabled });
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: body
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(editingScheduleTaskId ? '任务已更新' : '任务已创建', 'success');
+                    hideScheduleForm();
+                    loadScheduleTasks();
+                } else {
+                    showMessage('保存失败: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存失败:', error);
+                showMessage('保存失败', 'error');
+            });
         }
 
         // 同步状态变量
